@@ -1,5 +1,5 @@
 {
-	"name" : "esdk-obs-php",
+	"name" : "obs/esdk-obs-php",
 	"description" : "OBS PHP SDK",
 	"license":"Apache License 2.0",
 	"version":"3.0.2",
