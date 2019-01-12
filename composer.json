@@ -13,10 +13,10 @@
 		"psr/log" : "1.0.2"
 	},
 	
-	"keywords" :["obs", "php"]
+	"keywords" :["obs", "php"],
 	"autoload": {
-            "psr-4": {
-                "Obs\\": "src/"
-            }
-    	}
+		"psr-4": {
+			"Obs\\": "src/"
+		}
+    }
 }
