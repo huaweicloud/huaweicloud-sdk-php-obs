@@ -14,5 +14,9 @@
 	},
 	
 	"keywords" :["obs", "php"]
-	
+	"autoload": {
+            "psr-4": {
+                "Obs\\": "src/"
+            }
+    	}
 }
