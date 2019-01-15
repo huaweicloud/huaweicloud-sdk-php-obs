@@ -1,1 +1,3 @@
-# huaweicloud-sdk-php-obs
+
+Version:3.0.2
+
