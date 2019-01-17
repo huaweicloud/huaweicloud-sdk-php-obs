@@ -9,8 +9,8 @@
 		"guzzlehttp/psr7" : "1.4.2",
 		"guzzlehttp/promises" : "1.3.1",
 		"psr/http-message" : "1.0.1",
-		"monolog/monolog" : "1.23.0",
-		"psr/log" : "1.0.2"
+		"monolog/monolog" : "1.*",
+		"psr/log" : "1.*"
 	},
 	
 	"keywords" :["obs", "php"],
