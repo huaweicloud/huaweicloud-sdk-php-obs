@@ -1,5 +1,5 @@
 {
-	"name" : "obs/esdk-obs-php",
+	"name" : "non0/huaweicloud-obs",
 	"description" : "OBS PHP SDK",
 	"license":"Apache-2.0",
 	"version":"3.0.2",
