@@ -3,3 +3,6 @@ npm-debug.log
 /package.lock
 /.idea
 /.vscode
+/vendor
+/demo/config-local.php
+/composer.lock
