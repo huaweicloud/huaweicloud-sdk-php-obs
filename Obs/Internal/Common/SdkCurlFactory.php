@@ -1,4 +1,20 @@
 <?php
+
+/**
+ * Copyright 2019 Huawei Technologies Co.,Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+ * this file except in compliance with the License.  You may obtain a copy of the
+ * License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed
+ * under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations under the License.
+ *
+ */
+
 namespace Obs\Internal\Common;
 
 use GuzzleHttp\Psr7;
@@ -7,20 +23,12 @@ use Psr\Http\Message\RequestInterface;
 use GuzzleHttp\Handler\CurlFactoryInterface;
 use GuzzleHttp\Handler\EasyHandle;
 
-/**
- * Creates curl resources from a request
- */
 class SdkCurlFactory implements CurlFactoryInterface
 {
-    /** @var array */
     private $handles = [];
 
-    /** @var int Total number of idle handles to keep in cache */
     private $maxHandles;
 
-    /**
-     * @param int $maxHandles Maximum number of idle handles.
-     */
     public function __construct($maxHandles)
     {
         $this->maxHandles = $maxHandles;
@@ -208,12 +216,6 @@ class SdkCurlFactory implements CurlFactoryInterface
         }
     }
 
-    /**
-     * Remove a header from the options array.
-     *
-     * @param string $name    Case-insensitive header to remove
-     * @param array  $options Array of options to modify
-     */
     private function removeHeader($name, array &$options)
     {
         foreach (array_keys($options['_headers']) as $key) {

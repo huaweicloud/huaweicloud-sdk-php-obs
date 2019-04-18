@@ -1,5 +1,20 @@
 <?php
 
+/**
+ * Copyright 2019 Huawei Technologies Co.,Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+ * this file except in compliance with the License.  You may obtain a copy of the
+ * License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed
+ * under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations under the License.
+ *
+ */
+
 namespace Obs\Internal\Common;
 
 use GuzzleHttp\Exception\RequestException;
@@ -12,21 +27,10 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 
-/**
- * HTTP handler that uses PHP's HTTP stream wrapper.
- */
 class SdkStreamHandler
 {
     private $lastHeaders = [];
 
-    /**
-     * Sends an HTTP request.
-     *
-     * @param RequestInterface $request Request to send.
-     * @param array            $options Request transfer options.
-     *
-     * @return PromiseInterface
-     */
     public function __invoke(RequestInterface $request, array $options)
     {
         if (isset($options['delay'])) {
@@ -176,17 +180,6 @@ class SdkStreamHandler
         return [$stream, $headers];
     }
 
-    /**
-     * Drains the source stream into the "sink" client option.
-     *
-     * @param StreamInterface $source
-     * @param StreamInterface $sink
-     * @param string          $contentLength Header specifying the amount of
-     *                                       data to read.
-     *
-     * @return StreamInterface
-     * @throws \RuntimeException when the sink option is invalid.
-     */
     private function drain(
         StreamInterface $source,
         StreamInterface $sink,
@@ -204,14 +197,6 @@ class SdkStreamHandler
         return $sink;
     }
 
-    /**
-     * Create a resource and check to ensure it was created successfully
-     *
-     * @param callable $callback Callable that returns stream resource
-     *
-     * @return resource
-     * @throws \RuntimeException on error
-     */
     private function createResource(callable $callback)
     {
         $errors = null;

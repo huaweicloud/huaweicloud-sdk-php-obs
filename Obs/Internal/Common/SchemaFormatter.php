@@ -1,24 +1,27 @@
 <?php
 
+/**
+ * Copyright 2019 Huawei Technologies Co.,Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+ * this file except in compliance with the License.  You may obtain a copy of the
+ * License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed
+ * under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations under the License.
+ *
+ */
+
 namespace Obs\Internal\Common;
 
 
-/**
- * JSON Schema formatter class
- */
 class SchemaFormatter
 {
-    /** @var \DateTimeZone */
     protected static $utcTimeZone;
 
-    /**
-     * Format a value by a registered format name
-     *
-     * @param string $format Registered format used to format the value
-     * @param mixed  $value  Value being formatted
-     *
-     * @return mixed
-     */
     public static function format($format, $value)
     {
         switch ($format) {
@@ -41,11 +44,6 @@ class SchemaFormatter
         }
     }
     
-    /**
-     * Treat $dateTime as UTC time
-     * @param unknown $dateTime
-     * @return unknown|NULL
-     */
     public static function formatDateTimeMiddle($dateTime)
     {
     	if (is_string($dateTime)) {
@@ -58,83 +56,36 @@ class SchemaFormatter
     	return null;
     }
 
-    /**
-     * Create a ISO 8601 (YYYY-MM-DDThh:mm:ssZ) formatted date time value in UTC time
-     *
-     * @param string|integer|\DateTime $value Date time value
-     *
-     * @return string
-     */
     public static function formatDateTime($value)
     {
         return self::dateFormatter($value, 'Y-m-d\TH:i:s\Z');
     }
 
-    /**
-     * Create an HTTP date (RFC 1123 / RFC 822) formatted UTC date-time string
-     *
-     * @param string|integer|\DateTime $value Date time value
-     *
-     * @return string
-     */
     public static function formatDateTimeHttp($value)
     {
         return self::dateFormatter($value, 'D, d M Y H:i:s \G\M\T');
     }
 
-    /**
-     * Create a YYYY-MM-DD formatted string
-     *
-     * @param string|integer|\DateTime $value Date time value
-     *
-     * @return string
-     */
     public static function formatDate($value)
     {
         return self::dateFormatter($value, 'Y-m-d');
     }
 
-    /**
-     * Create a hh:mm:ss formatted string
-     *
-     * @param string|integer|\DateTime $value Date time value
-     *
-     * @return string
-     */
     public static function formatTime($value)
     {
         return self::dateFormatter($value, 'H:i:s');
     }
 
-    /**
-     * Formats a boolean value as a string
-     *
-     * @param string|integer|bool $value Value to convert to a boolean 'true' / 'false' value
-     *
-     * @return string
-     */
     public static function formatBooleanAsString($value)
     {
         return filter_var($value, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false';
     }
 
-    /**
-     * Return a UNIX timestamp in the UTC timezone
-     *
-     * @param string|integer|\DateTime $value Time value
-     *
-     * @return int
-     */
     public static function formatTimestamp($value)
     {
         return (int) self::dateFormatter($value, 'U');
     }
 
-    /**
-     * Get a UTC DateTimeZone object
-     *
-     * @return \DateTimeZone
-     */
     protected static function getUtcTimeZone()
     {
         // @codeCoverageIgnoreStart
@@ -146,15 +97,6 @@ class SchemaFormatter
         return self::$utcTimeZone;
     }
 
-    /**
-     * Perform the actual DateTime formatting
-     *
-     * @param int|string|\DateTime $dateTime Date time value
-     * @param string               $format   Format of the result
-     *
-     * @return string
-     * @throws InvalidArgumentException
-     */
     protected static function dateFormatter($dateTime, $format)
     {
         if (is_numeric($dateTime)) {
