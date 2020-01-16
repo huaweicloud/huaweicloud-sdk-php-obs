@@ -39,6 +39,8 @@ class ObsTransform implements ITransform {
             $para = $this->transAclGroupUri($para);
         } else if ($sign == 'event') {
             $para = $this->transNotificationEvent($para);
+        } else if ($sign == 'storageClass') {
+            $para = $this->transStorageClass($para);
         }
         return $para;
     }
@@ -63,6 +65,13 @@ class ObsTransform implements ITransform {
         if ($pos !== false && $pos === 0) {
             $para = substr($para, 3);
         }
+        return $para;
+    }
+    
+    private function transStorageClass($para) {
+        $search = array('STANDARD', 'STANDARD_IA', 'GLACIER');
+        $repalce = array(ObsClient::StorageClassStandard, ObsClient::StorageClassWarm, ObsClient::StorageClassCold);
+        $para = str_replace($search, $repalce, $para);
         return $para;
     }
 }

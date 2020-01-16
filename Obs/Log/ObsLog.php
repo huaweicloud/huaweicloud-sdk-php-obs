@@ -110,7 +110,11 @@ class ObsLog extends Logger
 	public static function commonLog($level, $format, $args1 = null, $arg2 = null)
 	{
 		if(ObsLog::$log){
-			$msg = sprintf(urldecode($format),$args1,$arg2);
+		    if ($args1 === null && $arg2 === null) {
+		        $msg = urldecode($format);
+		    } else {
+		        $msg = sprintf($format, $args1, $arg2);
+		    }
 			$back = debug_backtrace();
 			$line = $back[0]['line'];
 			$funcname = $back[1]['function'];

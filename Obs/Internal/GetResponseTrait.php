@@ -143,7 +143,8 @@ trait GetResponseTrait
 								$temp = [];
 								foreach ($headers as $headerName => $headerValue){
 									if(stripos($headerName, $name) === 0){
-									    $temp[substr($headerName, strlen($name))] = rawurldecode($response -> getHeaderLine($headerName));
+									    $metaKey = rawurldecode(substr($headerName, strlen($name)));
+									    $temp[$metaKey] = rawurldecode($response -> getHeaderLine($headerName));
 									}
 								}
 								$model[$key] = $temp;
@@ -164,7 +165,7 @@ trait GetResponseTrait
 							}
 						}
 						if(!$isSet){
-							$model[$key] = $response -> getHeaderLine($name);
+							$model[$key] = rawurldecode($response -> getHeaderLine($name));
 						}
 					}else if($location === 'xml' && $body !== null){
 					    if(!isset($xml) && ($xml = simplexml_load_string($body -> getContents()))){

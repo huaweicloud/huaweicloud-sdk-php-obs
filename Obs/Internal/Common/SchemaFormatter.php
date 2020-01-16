@@ -22,26 +22,33 @@ class SchemaFormatter
 {
     protected static $utcTimeZone;
 
-    public static function format($format, $value)
-    {
-        switch ($format) {
-            case 'date-time':
-                return self::formatDateTime($value);
-            case 'date-time-http':
-                return self::formatDateTimeHttp($value);
-            case 'date':
-                return self::formatDate($value);
-            case 'time':
-                return self::formatTime($value);
-            case 'timestamp':
-                return self::formatTimestamp($value);
-            case 'boolean-string':
-                return self::formatBooleanAsString($value);
-            case 'date-time-middle':
-            	return self::formatDateTimeMiddle($value);
-            default:
-                return $value;
+    public static function format($fmt, $value)
+    {   
+        if($fmt === 'date-time'){
+            return self::formatDateTime($value);
         }
+        
+        if($fmt === 'data-time-http'){
+            return self::formatDateTimeHttp($value);
+        }
+        
+        if($fmt === 'data-time-middle'){
+            return self::formatDateTimeMiddle($value);
+        }
+        
+        if($fmt === 'date'){
+            return self::formatDate($value);
+        }
+        
+        if($fmt === 'timestamp'){
+            return self::formatTimestamp($value);
+        }
+        
+        if($fmt === 'boolean-string'){
+            return self::formatBooleanAsString($value);
+        }
+        
+        return $value;
     }
     
     public static function formatDateTimeMiddle($dateTime)
@@ -86,29 +93,22 @@ class SchemaFormatter
         return (int) self::dateFormatter($value, 'U');
     }
 
-    protected static function getUtcTimeZone()
+    private static function dateFormatter($dt, $fmt)
     {
-        // @codeCoverageIgnoreStart
-        if (!self::$utcTimeZone) {
-            self::$utcTimeZone = new \DateTimeZone('UTC');
-        }
-        // @codeCoverageIgnoreEnd
-
-        return self::$utcTimeZone;
-    }
-
-    protected static function dateFormatter($dateTime, $format)
-    {
-        if (is_numeric($dateTime)) {
-            return gmdate($format, (int) $dateTime);
+        if (is_numeric($dt)) {
+            return gmdate($fmt, (int) $dt);
         }
 
-        if (is_string($dateTime)) {
-            $dateTime = new \DateTime($dateTime);
+        if (is_string($dt)) {
+            $dt = new \DateTime($dt);
         }
 
-        if ($dateTime instanceof \DateTime) {
-            return $dateTime->setTimezone(self::getUtcTimeZone())->format($format);
+        if ($dt instanceof \DateTime) {
+            if (!self::$utcTimeZone) {
+                self::$utcTimeZone = new \DateTimeZone('UTC');
+            }
+            
+            return $dt->setTimezone(self::$utcTimeZone)->format($fmt);
         }
 
         return null;
