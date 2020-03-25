@@ -1,3 +1,13 @@
+## 安装
+
+使用Composer进行安装
+
+```bash
+composer require obs/esdk-obs-php
+```
+
+## 更新记录
+
 Version 3.19.9
 更新发布版本号，新的版本号命名方式：主版本号.年标识.月标识。
 
