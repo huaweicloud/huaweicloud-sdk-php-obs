@@ -27,9 +27,9 @@ class V4Signature extends AbstractSignature
 	
 	protected $utcTimeZone;
 	
-	public function __construct($ak, $sk, $pathStyle, $endpoint, $region, $methodName, $signature, $securityToken=false)
+	public function __construct($ak, $sk, $pathStyle, $endpoint, $region, $methodName, $signature, $securityToken=false, $isCname=false)
 	{
-	    parent::__construct($ak, $sk, $pathStyle, $endpoint, $methodName, $signature, $securityToken);
+	    parent::__construct($ak, $sk, $pathStyle, $endpoint, $methodName, $signature, $securityToken, $isCname);
 		$this->region = $region;
 		$this->utcTimeZone = new \DateTimeZone ('UTC');
 	}

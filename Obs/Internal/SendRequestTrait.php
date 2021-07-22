@@ -47,7 +47,7 @@ trait SendRequestTrait
 	
 	protected $region = 'region';
 	
-	protected $signature = 'v2';
+	protected $signature = 'obs';
 	
 	protected $sslVerify = false;
 	
@@ -58,6 +58,8 @@ trait SendRequestTrait
 	protected $socketTimeout = 60; 
 	
 	protected $connectTimeout = 60;
+
+	protected $isCname = false;
 	
 	/** @var Client */
 	protected $httpClient;
@@ -93,6 +95,8 @@ trait SendRequestTrait
 	            }
 	        }
 	    }
+
+
 	    
 	    $queryParams = [];
 	    if(isset($args['QueryParams']) && is_array($args['QueryParams']) ){
@@ -108,7 +112,7 @@ trait SendRequestTrait
 	        $queryParams[$constants::SECURITY_TOKEN_HEAD] = $this->securityToken;
 	    }
 	    
-	    $sign = new DefaultSignature($this->ak, $this->sk, $this->pathStyle, $this->endpoint, $method, $this->signature);
+	    $sign = new DefaultSignature($this->ak, $this->sk, $this->pathStyle, $this->endpoint, $method, $this->signature, $this->securityToken, $this->isCname);
 	    
 	    $url = parse_url($this->endpoint);
 	    $host = $url['host'];
@@ -119,9 +123,11 @@ trait SendRequestTrait
 	        if($this-> pathStyle){
 	            $result = '/' . $bucketName;
 	        }else{
-	            $host = $bucketName . '.' . $host;
+	            $host = $this->isCname ? $host : $bucketName . '.' . $host;
 	        }
 	    }
+
+	    $headers['Host'] = $host;
 	    
 	    if($objectKey){
 	        $objectKey = $sign ->urlencodeWithSafe($objectKey);
@@ -201,7 +207,7 @@ trait SendRequestTrait
 		    $queryParams['x-amz-security-token'] = $this->securityToken;
 		}
 		
-		$v4 = new V4Signature($this->ak, $this->sk, $this->pathStyle, $this->endpoint, $this->region, $method, $this->signature);
+		$v4 = new V4Signature($this->ak, $this->sk, $this->pathStyle, $this->endpoint, $this->region, $method, $this->signature, $this->securityToken, $this->isCname);
 		
 		$url = parse_url($this->endpoint);
 		$host = $url['host'];
@@ -212,9 +218,11 @@ trait SendRequestTrait
 			if($this-> pathStyle){
 				$result = '/' . $bucketName;
 			}else{
-				$host = $bucketName . '.' . $host;
+				$host = $this->isCname ? $host : $bucketName . '.' . $host;
 			}
 		}
+
+        $headers['Host'] = $host;
 		
 		if($objectKey){
 			$objectKey = $v4 -> urlencodeWithSafe($objectKey);
@@ -550,8 +558,8 @@ trait SendRequestTrait
 			$endpoint = $this->endpoint;
 		}
 		$signatureInterface = strcasecmp($this-> signature, 'v4') === 0 ? 
-		new V4Signature($this->ak, $this->sk, $this->pathStyle, $endpoint, $this->region, $model['method'], $this->signature, $this->securityToken) : 
-		new DefaultSignature($this->ak, $this->sk, $this->pathStyle, $endpoint, $model['method'], $this->signature, $this->securityToken);
+		new V4Signature($this->ak, $this->sk, $this->pathStyle, $endpoint, $this->region, $model['method'], $this->signature, $this->securityToken, $this->isCname) :
+		new DefaultSignature($this->ak, $this->sk, $this->pathStyle, $endpoint, $model['method'], $this->signature, $this->securityToken, $this->isCname);
 		$authResult = $signatureInterface -> doAuth($operation, $params, $model);
 		$httpMethod = $authResult['method'];
 		ObsLog::commonLog(DEBUG, 'perform '. strtolower($httpMethod) . ' request with url ' . $authResult['requestUrl']);

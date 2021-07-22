@@ -114,7 +114,11 @@ trait GetResponseTrait
 			}
 		}
 	}
-	
+
+	private function isJsonResponse($response) {
+	    return $response -> getHeaderLine('content-type') === 'application/json';
+    }
+
 	private function parseCommonHeaders($model, $response){
 	    $constants = Constants::selectConstants($this -> signature);
 	    foreach($constants::COMMON_HEADERS as $key => $value){
@@ -176,7 +180,17 @@ trait GetResponseTrait
 					}else if($location === 'body' && $body !== null){
 						if(isset($value['type']) && $value['type'] === 'stream'){
 							$model[$key] = $body;
-						}else{
+						}else if (isset($value['type']) && $value['type'] === 'json') {
+                            $jsonBody = trim($body -> getContents());
+                            if ($jsonBody && ($data = json_decode($jsonBody, true))) {
+                                if (is_array($data)) {
+                                    $model[$key] = $data;
+                                } elseif (strlen($data)) {
+                                    ObsLog::commonLog(ERROR, "response body %s, and jsonToArray data is %s",$body, $data);
+                                }
+                            }
+                            $closeBody = true;
+                        } else {
 							$model[$key] = $body -> getContents();
 							$closeBody = true;
 						}
@@ -248,6 +262,54 @@ trait GetResponseTrait
 			$body -> close();
 		}
 	}
+
+	private function parseJsonToException($body, $obsException) {
+        try {
+            $jsonErrorBody = trim($body -> getContents());
+            if ($jsonErrorBody && ($data = json_decode($jsonErrorBody, true))) {
+                if (is_array($data)) {
+                    if ($data['request_id']) {
+                        $obsException -> setRequestId(strval($data['request_id']));
+                    }
+                    if ($data['code']) {
+                        $obsException -> setExceptionCode(strval($data['code']));
+                    }
+                    if ($data['message']) {
+                        $obsException -> setExceptionMessage(strval($data['message']));
+                    }
+                } elseif (strlen($data)) {
+                    ObsLog::commonLog(ERROR, "response body %s, and jsonToArray data is %s",$body, $data);
+                    $obsException-> setExceptionMessage("Invalid response data，since it is not json data");
+                }
+            }
+        } finally {
+            $body -> close();
+        }
+    }
+
+    private function parseJsonToModel($body, $model) {
+	    try{
+	        $jsonErrorBody = trim($body -> getContents());
+	        if ($jsonErrorBody && ($jsonArray = json_decode($jsonErrorBody, true))) {
+	            if (is_array($jsonArray)) {
+                    if ($jsonArray['request_id']) {
+                        $model['RequestId'] = strval($jsonArray['request_id']);
+                    }
+                    if ($jsonArray['code']) {
+                        $model['Code'] = strval($jsonArray['code']);
+                    }
+                    if ($jsonArray['message']) {
+                        $model['Message']  = strval($jsonArray['message']);
+                    }
+                } elseif (strlen($jsonArray)) {
+                    ObsLog::commonLog(ERROR, "response body %s, and jsonToArray data is %s",$body, $jsonArray);
+                    $model['Message'] = "Invalid response data，since it is not json data";
+                }
+            }
+        } finally {
+            $body -> close();
+        }
+    }
 	
 	private function parseXmlToModel($body, $model){
 		try{
@@ -281,6 +343,8 @@ trait GetResponseTrait
 	{
 		$statusCode = $response -> getStatusCode();
 		$expectedLength = $response -> getHeaderLine('content-length');
+        $responseContentType = $response -> getHeaderLine('content-type');
+
 		$expectedLength = is_numeric($expectedLength) ? floatval($expectedLength) : null;
 		
 		$body = new CheckoutStream($response->getBody(), $expectedLength);
@@ -291,11 +355,19 @@ trait GetResponseTrait
 				$obsException-> setRequest($request);
 				$obsException-> setResponse($response);
 				$obsException-> setExceptionType($this->isClientError($response) ? 'client' : 'server');
-				$this->parseXmlToException($body, $obsException);
+				if ($responseContentType === 'application/json') {
+				    $this->parseJsonToException($body, $obsException);
+                } else {
+                    $this->parseXmlToException($body, $obsException);
+                }
 				throw $obsException;
 			}else{
 				$this->parseCommonHeaders($model, $response);
-				$this->parseXmlToModel($body, $model);
+                if ($responseContentType === 'application/json') {
+                    $this->parseJsonToModel($body, $model);
+                } else {
+                    $this->parseXmlToModel($body, $model);
+                }
 			}
 			
 		}else{
@@ -345,7 +417,11 @@ trait GetResponseTrait
 		if($response){
 			$obsException-> setResponse($response);
 			$obsException-> setExceptionType($this->isClientError($response) ? 'client' : 'server');
-			$this->parseXmlToException($response -> getBody(), $obsException);
+			if ($this->isJsonResponse($response)) {
+                $this->parseJsonToException($response -> getBody(), $obsException);
+            } else {
+                $this->parseXmlToException($response -> getBody(), $obsException);
+            }
     		if ($obsException->getRequestId() === null) {
     		    $prefix = strcasecmp($this->signature, 'obs' ) === 0 ? 'x-obs-' : 'x-amz-';
     		    $requestId = $response->getHeaderLine($prefix . 'request-id');
@@ -363,7 +439,6 @@ trait GetResponseTrait
 	protected function parseException(Model $model, Request $request, RequestException $exception, $message=null)
 	{
 		$response = $exception-> hasResponse() ? $exception-> getResponse() : null;
-		
 		if($this-> exceptionResponseMode){
 			throw $this->buildException($request, $exception, $message);
 		}else{

@@ -43,6 +43,8 @@ abstract class AbstractSignature implements SignatureInterface
 	protected $securityToken;
 	
 	protected $signature;
+
+	protected $isCname;
 	
 	public static function urlencodeWithSafe($val, $safe='/'){
 		if(($len = strlen($val)) === 0){
@@ -56,7 +58,7 @@ abstract class AbstractSignature implements SignatureInterface
 		return implode('', $buffer);
 	}
 	
-	protected function __construct($ak, $sk, $pathStyle, $endpoint, $methodName, $signature, $securityToken=false)
+	protected function __construct($ak, $sk, $pathStyle, $endpoint, $methodName, $signature, $securityToken=false, $isCname=false)
 	{
 		$this -> ak = $ak;
 		$this -> sk = $sk;
@@ -65,6 +67,7 @@ abstract class AbstractSignature implements SignatureInterface
 		$this -> methodName = $methodName;
 		$this -> signature = $signature;
 		$this -> securityToken = $securityToken;
+		$this -> isCname = $isCname;
 	}
 	
 	protected function transXmlByType($key, &$value, &$subParams, $transHolder)
@@ -291,6 +294,7 @@ abstract class AbstractSignature implements SignatureInterface
 									    $temp[] = self::urlencodeWithSafe($val, ' ;/?:@&=+$,\'*');
 									}
 								}
+
 								$headers[$name] = $temp;
 							}
 						}else if($type === 'password'){
@@ -357,7 +361,16 @@ abstract class AbstractSignature implements SignatureInterface
 							$fileFlag = true;
 						}else if($type === 'stream'){
 							$result['body'] = $val;
-						}else{
+						} else if ($type === 'json') {
+						    //TODO
+                            $jsonData = json_encode($val);
+                            if (!$jsonData) {
+                                $obsException= new ObsException('input is invalid, since it is not json data');
+                                $obsException-> setExceptionType('client');
+                                throw $obsException;
+                            }
+                            $result['body'] = strval($jsonData);
+                        } else{
 							$result['body'] = strval($val);
 						}
 					}else if($location === 'response'){
@@ -372,7 +385,7 @@ abstract class AbstractSignature implements SignatureInterface
 					$requestUrl = $requestUrl . '/' .  $dnsParam;
 				}else{
 					$defaultPort = strtolower($url['scheme']) === 'https' ? '443' : '80';
-					$host = $dnsParam. '.' . $host;
+					$host = $this -> isCname ? $host : $dnsParam. '.' . $host;
 					$requestUrl = $url['scheme'] . '://' . $host . ':' . (isset($url['port']) ? $url['port'] : $defaultPort);
 				}
 			}

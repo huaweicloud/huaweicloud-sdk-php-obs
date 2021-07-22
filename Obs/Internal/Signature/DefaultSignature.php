@@ -27,10 +27,10 @@ class DefaultSignature extends AbstractSignature
 	const INTEREST_HEADER_KEY_LIST = array('content-type', 'content-md5', 'date');
 	
 	
-	public function __construct($ak, $sk, $pathStyle, $endpoint, $methodName, $signature, $securityToken=false)
+	public function __construct($ak, $sk, $pathStyle, $endpoint, $methodName, $signature, $securityToken=false, $isCname=false)
 	{
 	    
-	    parent::__construct($ak, $sk, $pathStyle, $endpoint, $methodName, $signature, $securityToken);
+	    parent::__construct($ak, $sk, $pathStyle, $endpoint, $methodName, $signature, $securityToken, $isCname);
 	}
 	
 	public function doAuth(array &$requestConfig, array &$params, Model $model)
@@ -38,7 +38,6 @@ class DefaultSignature extends AbstractSignature
 		$result = $this -> prepareAuth($requestConfig, $params, $model);
 		
 		$result['headers']['Date'] = gmdate('D, d M Y H:i:s \G\M\T');
-		
 		$canonicalstring = $this-> makeCanonicalstring($result['method'], $result['headers'], $result['pathArgs'], $result['dnsParam'], $result['uriParam']);
 		
 		$result['cannonicalRequest'] = $canonicalstring;
@@ -64,7 +63,7 @@ class DefaultSignature extends AbstractSignature
 		$constants = Constants::selectConstants($this -> signature);
 		
 		foreach ($headers as $key => $value){
-			$key = strtolower($key);
+            $key = strtolower($key);
 			if(in_array($key, self::INTEREST_HEADER_KEY_LIST) || strpos($key, $constants::HEADER_PREFIX) === 0){
 				$interestHeaders[$key] = $value;
 			}
@@ -98,7 +97,9 @@ class DefaultSignature extends AbstractSignature
 		}
 		
 		$uri = '';
-		
+
+		$bucketName = $this->isCname ? $headers['Host'] : $bucketName;
+
 		if($bucketName){
 			$uri .= '/';
 			$uri .= $bucketName;
@@ -113,14 +114,15 @@ class DefaultSignature extends AbstractSignature
 			}
 			$uri .= $objectKey;
 		}
-		
+
 		$buffer[] = $uri === ''? '/' : $uri;
-		
+
+
 		if(!empty($pathArgs)){
 			ksort($pathArgs);
 			$_pathArgs = [];
 			foreach ($pathArgs as $key => $value){
-			    if(in_array(strtolower($key), $constants::ALLOWED_RESOURCE_PARAMTER_NAMES)){
+			    if(in_array(strtolower($key), $constants::ALLOWED_RESOURCE_PARAMTER_NAMES) || strpos($key, $constants::HEADER_PREFIX) === 0){
 					$_pathArgs[] = $value === null || $value === '' ? $key : $key . '=' . urldecode($value);
 				}
 			}
@@ -129,7 +131,7 @@ class DefaultSignature extends AbstractSignature
 				$buffer[] = implode('&', $_pathArgs);
 			}
 		}
-		
+
 		return implode('', $buffer);
 	}
 

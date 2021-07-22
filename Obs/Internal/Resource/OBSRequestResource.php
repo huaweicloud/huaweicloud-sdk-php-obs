@@ -547,6 +547,7 @@ class OBSRequestResource {
                                     ]
                             ]
                     ],
+
                     'setBucketQuota' => [ 
                             'httpMethod' => 'PUT',
                             'specialParam' => 'quota',
@@ -961,6 +962,75 @@ class OBSRequestResource {
                             ]
                     ],
 
+                    'setFetchPolicy' => [
+                        'httpMethod' => 'PUT',
+                        'specialParam' => 'obsfetchpolicy',
+                        'requestParameters' => [
+                            'Bucket' => [
+                                'required' => true,
+                                'type' => 'string',
+                                'location' => 'dns'
+                            ],
+                            'Policy' => [
+                                'required' => true,
+                                'type' => 'json',
+                                'location' => 'body'
+                            ]
+                        ],
+                        'responseParameters' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'RequestId' => [
+                                    'location' => 'header',
+                                    'sentAs' => 'x-obs-request-id'
+                                ]
+                            ]
+                        ]
+                    ],
+
+                    'getFetchPolicy' => [
+                        'httpMethod' => 'GET',
+                        'specialParam' => 'obsfetchpolicy',
+                        'requestParameters' => [
+                            'Bucket' => [
+                                'required' => true,
+                                'type' => 'string',
+                                'location' => 'dns'
+                            ]
+                        ],
+                        'responseParameters' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'Policy' => [
+                                    'type' => 'json',
+                                    'location' => 'body'
+                                ],
+                                'RequestId' => [
+                                    'location' => 'header',
+                                    'sentAs' => 'x-obs-request-id'
+                                ]
+                            ]
+                        ]
+                    ],
+
+                    'deleteFetchPolicy' => [
+                        'httpMethod' => 'DELETE',
+                        'specialParam' => 'obsfetchpolicy',
+                        'requestParameters' => [
+                            'Bucket' => [
+                                'required' => true,
+                                'type' => 'string',
+                                'location' => 'dns'
+                            ]
+                        ],
+                        'responseParameters' => [
+                            'RequestId' => [
+                                'location' => 'header',
+                                'sentAs' => 'x-obs-request-id'
+                            ]
+                        ]
+                    ],
+
                     'setBucketPolicy' => [ 
                             'httpMethod' => 'PUT',
                             'specialParam' => 'policy',
@@ -1010,6 +1080,67 @@ class OBSRequestResource {
                                             ]
                                     ]
                             ]
+                    ],
+
+                    'setFetchJob' => [
+                        'httpMethod' => 'PUT',
+                        'specialParam' => 'obsfetchjob',
+                        'requestParameters' => [
+                            'Bucket' => [
+                                'required' => true,
+                                'type' => 'string',
+                                'location' => 'dns'
+                            ],
+                            'Job' => [
+                                'required' => true,
+                                'type' => 'json',
+                                'location' => 'body'
+                            ]
+                        ],
+                        'responseParameters' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'RequestId' => [
+                                    'location' => 'header',
+                                    'sentAs' => 'x-obs-request-id'
+                                ],
+                                'JobInfo' => [
+                                    'type' => 'string',
+                                    'location' => 'body'
+                                ]
+                            ]
+                        ]
+                    ],
+
+                    'getFetchJob' => [
+                        'httpMethod' => 'GET',
+                        'specialParam' => 'obsfetchjob',
+                        'requestParameters' => [
+                            'Bucket' => [
+                                'required' => true,
+                                'type' => 'string',
+                                'location' => 'dns'
+                            ],
+                            'JobID' => [
+                                'required' => true,
+                                'type' => 'string',
+                                'location' => 'query',
+                                'sentAs' => 'x-fetch-job-id'
+                            ],
+                        ],
+                        'responseParameters' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'Job' => [
+                                    'type' => 'json',
+                                    'location' => 'body'
+                                ],
+                                'RequestId' => [
+                                    'location' => 'header',
+                                    'sentAs' => 'x-obs-request-id'
+                                ]
+                            ]
+                        ]
                     ],
 
                     'deleteBucketPolicy' => [ 

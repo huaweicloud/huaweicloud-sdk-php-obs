@@ -81,7 +81,12 @@ define('EMERGENCY', Logger::EMERGENCY);
  * @method Model getBucketTagging(array $args = []);
  * @method Model deleteBucketTagging(array $args = []);
  * @method Model optionsBucket(array $args = []);
- * 
+ * @method Model getFetchPolicy(array $args = []);
+ * @method Model setFetchPolicy(array $args = []);
+ * @method Model deleteFetchPolicy(array $args = []);
+ * @method Model setFetchJob(array $args = []);
+ * @method Model getFetchJob(array $args = []);
+ *
  * @method Model putObject(array $args = []);
  * @method Model getObject(array $args = []);
  * @method Model copyObject(array $args = []);
@@ -155,12 +160,17 @@ define('EMERGENCY', Logger::EMERGENCY);
  * @method Promise listMultipartUploadsAsync(array $args = [], callable $callback);
  * @method Promise optionsObjectAsync(array $args = [], callable $callback);
  * @method Promise restoreObjectAsync(array $args = [], callable $callback);
+ * @method Model getFetchPolicyAsync(array $args = [], callable $callback);
+ * @method Model setFetchPolicyAsync(array $args = [], callable $callback);
+ * @method Model deleteFetchPolicyAsync(array $args = [], callable $callback);
+ * @method Model setFetchJobAsync(array $args = [], callable $callback);
+ * @method Model getFetchJobAsync(array $args = [], callable $callback);
  * 
  */
 class ObsClient
 {
 	
-	const SDK_VERSION = '3.19.9';
+	const SDK_VERSION = '3.21.6';
 	
 	const AclPrivate = 'private';
 	const AclPublicRead = 'public-read';
@@ -284,6 +294,10 @@ class ObsClient
 		if(isset($config['exception_response_mode'])){
 			$this -> exceptionResponseMode = $config['exception_response_mode'];
 		}
+
+		if (isset($config['is_cname'])) {
+		    $this -> isCname = $config['is_cname'];
+        }
 		
 		$host = parse_url($this -> endpoint)['host'];
 		if(filter_var($host, FILTER_VALIDATE_IP) !== false) {
