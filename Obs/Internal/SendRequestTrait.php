@@ -68,14 +68,14 @@ trait SendRequestTrait
 	    if (strcasecmp($this -> signature, 'v4') === 0) {
 	        return $this -> createV4SignedUrl($args);
 	    }
-	    return $this->createCommonSignedUrl($args, $this->signature);
+	    return $this->createCommonSignedUrl($this->signature,$args);
 	}
 	
 	public function createV2SignedUrl(array $args=[]) {
-	    return $this->createCommonSignedUrl($args, 'v2');
+	    return $this->createCommonSignedUrl( 'v2',$args);
 	}
 	
-	private function createCommonSignedUrl(array $args=[], $signature) {
+	private function createCommonSignedUrl(string $signature,array $args=[]) {
 	    if(!isset($args['Method'])){
 	        $obsException = new ObsException('Method param must be specified, allowed values: GET | PUT | HEAD | POST | DELETE | OPTIONS');
 	        $obsException-> setExceptionType('client');
