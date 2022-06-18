@@ -642,7 +642,7 @@ class OBSRequestResource {
 
                     'getBucketStoragePolicy' => [ 
                             'httpMethod' => 'GET',
-                            'specialParam' => 'storagePolicy',
+                            'specialParam' => 'storageClass',
                             'requestParameters' => [ 
                                     'Bucket' => [ 
                                             'required' => true,

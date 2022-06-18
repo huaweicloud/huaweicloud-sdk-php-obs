@@ -539,11 +539,19 @@ trait SendRequestTrait
 		// fix bug that guzzlehttp lib will add the content-type if not set
 		if(($method === 'putObject' || $method === 'initiateMultipartUpload' || $method === 'uploadPart') && (!isset($params['ContentType']) || $params['ContentType'] === null)){
 			if(isset($params['Key'])){
-				$params['ContentType'] = Psr7\mimetype_from_filename($params['Key']);
+				try {
+					$params['ContentType'] = Psr7\mimetype_from_filename($params['Key']);
+				} catch (\Throwable $e) {
+					$params['ContentType'] = Psr7\MimeType::fromFilename($params['Key']);
+				}
 			}
 			
 			if((!isset($params['ContentType']) || $params['ContentType'] === null) && isset($params['SourceFile'])){
-				$params['ContentType'] = Psr7\mimetype_from_filename($params['SourceFile']);
+				try {
+					$params['ContentType'] = Psr7\mimetype_from_filename($params['SourceFile']);
+				} catch (\Throwable $e) {
+					$params['ContentType'] = Psr7\MimeType::fromFilename($params['SourceFile']);
+				}
 			}
 			
 			if(!isset($params['ContentType']) || $params['ContentType'] === null){

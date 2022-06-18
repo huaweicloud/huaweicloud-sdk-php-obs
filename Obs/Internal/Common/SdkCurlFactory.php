@@ -41,7 +41,7 @@ class SdkCurlFactory implements CurlFactoryInterface
         $this->maxHandles = $maxHandles;
     }
 
-    public function create(RequestInterface $request, array $options)
+    public function create(RequestInterface $request, array $options): EasyHandle
     {
         if (isset($options['curl']['body_as_string'])) {
             $options['_body_as_string'] = $options['curl']['body_as_string'];
@@ -85,7 +85,7 @@ class SdkCurlFactory implements CurlFactoryInterface
     	}
     }
 
-    public function release(EasyHandle $easy)
+    public function release(EasyHandle $easy): void
     {
         $resource = $easy->handle;
         unset($easy->handle);
@@ -272,7 +272,11 @@ class SdkCurlFactory implements CurlFactoryInterface
         if (isset($options['sink'])) {
             $sink = $options['sink'];
             if (!is_string($sink)) {
-                $sink = \GuzzleHttp\Psr7\stream_for($sink);
+                try {
+                    $sink = Psr7\stream_for($sink);
+                } catch (\Throwable $e) {
+                    $sink = Psr7\Utils::streamFor($sink);
+                }
             } elseif (!is_dir(dirname($sink))) {
                 throw new \RuntimeException(sprintf(
                     'Directory %s does not exist for sink value of %s',
@@ -288,7 +292,11 @@ class SdkCurlFactory implements CurlFactoryInterface
             };
         } else {
             $conf[CURLOPT_FILE] = fopen('php://temp', 'w+');
-            $easy->sink = Psr7\stream_for($conf[CURLOPT_FILE]);
+            try {
+                $easy->sink = Psr7\stream_for($conf[CURLOPT_FILE]);
+            } catch (\Throwable $e) {
+                $easy->sink = Psr7\Utils::streamFor($conf[CURLOPT_FILE]);
+            }
         }
         $timeoutRequiresNoSignal = false;
         if (isset($options['timeout'])) {

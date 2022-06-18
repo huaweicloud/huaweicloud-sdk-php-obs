@@ -109,7 +109,11 @@ class SdkStreamHandler
         $reason = isset($parts[2]) ? $parts[2] : null;
         $headers = \GuzzleHttp\headers_from_lines($hdrs);
         list ($stream, $headers) = $this->checkDecode($options, $headers, $stream);
-        $stream = Psr7\stream_for($stream);
+        try {
+            $stream = Psr7\stream_for($stream);
+        } catch (\Throwable $e) {
+            $stream = Psr7\Utils::streamFor($stream);
+        }
         $sink = $stream;
 
         if (strcasecmp('HEAD', $request->getMethod())) {
@@ -151,9 +155,15 @@ class SdkStreamHandler
             ? $options['sink']
             : fopen('php://temp', 'r+');
 
-        return is_string($sink)
-            ? new Psr7\LazyOpenStream($sink, 'w+')
-            : Psr7\stream_for($sink);
+        if (is_string($sink)) {
+            return new Psr7\LazyOpenStream($sink, 'w+');
+        }
+
+        try {
+            return Psr7\stream_for($sink);
+        } catch (\Throwable $e) {
+            return Psr7\Utils::streamFor($sink);
+        }
     }
 
     private function checkDecode(array $options, array $headers, $stream)
@@ -163,9 +173,16 @@ class SdkStreamHandler
             if (isset($normalizedKeys['content-encoding'])) {
                 $encoding = $headers[$normalizedKeys['content-encoding']];
                 if ($encoding[0] === 'gzip' || $encoding[0] === 'deflate') {
-                    $stream = new Psr7\InflateStream(
-                        Psr7\stream_for($stream)
-                    );
+                    try {
+                        $stream = new Psr7\InflateStream(
+                            Psr7\stream_for($stream)
+                        );
+                    } catch (\Throwable $th) {
+                        $stream = new Psr7\InflateStream(
+                            Psr7\Utils::streamFor($stream)
+                        );
+                    }
+
                     $headers['x-encoded-content-encoding']
                         = $headers[$normalizedKeys['content-encoding']];
                     unset($headers[$normalizedKeys['content-encoding']]);
