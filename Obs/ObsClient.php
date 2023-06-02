@@ -398,7 +398,7 @@ class ObsClient
 		} elseif (function_exists('curl_multi_exec')) {
 			$f = new SdkCurlFactory(50);
 			$obsclient->factorys[] = $f;
-			$handler = new CurlMultiHandler(['handle_factory' => $f1]);
+			$handler = new CurlMultiHandler(['handle_factory' => $f]);
 		}
 		
 		if (ini_get('allow_url_fopen')) {

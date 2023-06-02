@@ -18,7 +18,7 @@
 namespace Obs\Internal\Resource;
 
 class Constants {
-    const ALLOWED_RESOURCE_PARAMTER_NAMES = [ 
+    const ALLOWED_RESOURCE_PARAMTER_NAMES = [
             'acl',
             'policy',
             'torrent',
@@ -55,7 +55,24 @@ class Constants {
             'replication',
             'append',
             'position',
-            'x-oss-process'
+            'x-oss-process',
+
+            'CDNNotifyConfiguration',
+            'attname',
+            'customdomain',
+            'directcoldaccess',
+            'encryption',
+            'inventory',
+            'length',
+            'metadata',
+            'modify',
+            'name',
+            'rename',
+            'truncate',
+            'x-image-save-bucket',
+            'x-image-save-object',
+            'x-obs-security-token',
+            'x-obs-callback',
     ];
     const ALLOWED_REQUEST_HTTP_HEADER_METADATA_NAMES = [ 
             'content-type',

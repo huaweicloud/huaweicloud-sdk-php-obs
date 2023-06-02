@@ -2683,6 +2683,11 @@ class V2RequestResource {
                                             'type' => 'string',
                                             'location' => 'uri'
                                     ],
+                                    'Callback' => [
+                                        'type' => 'string',
+                                        'location' => 'header',
+                                        'sentAs' => 'x-amz-callback'
+                                     ],
                                     'ContentMD5' => [ 
                                             'type' => 'string',
                                             'location' => 'header',
@@ -3733,6 +3738,11 @@ class V2RequestResource {
                                             'type' => 'string',
                                             'location' => 'query',
                                             'sentAs' => 'uploadId'
+                                    ],
+                                    'Callback' => [
+                                        'type' => 'string',
+                                        'location' => 'header',
+                                        'sentAs' => 'x-amz-callback'
                                     ]
                             ],
                             'responseParameters' => [ 
@@ -3999,7 +4009,98 @@ class V2RequestResource {
                                             ]
                                     ]
                             ]
-                    ]
+                    ],
+                    
+                    'setBucketCustomDomain' => [
+                        'httpMethod' => 'PUT',
+                        'requestParameters' => [ 
+                                'Bucket' => [ 
+                                        'required' => true,
+                                        'type' => 'string',
+                                        'location' => 'dns'
+                                ],
+                                'DomainName' => [
+                                        'required' => true,
+                                        'type' => 'string',
+                                        'location' => 'query',
+                                        'sentAs' => 'customdomain'
+                                ]
+                              
+                        ],
+                        'responseParameters' => [ 
+                                'RequestId' => [ 
+                                        'location' => 'header',
+                                        'sentAs' => 'x-obs-request-id'
+                                ]
+                        ]
+                    ],
+
+                    'getBucketCustomDomain' => [
+                        'httpMethod' => 'GET',
+                        'specialParam' => 'customdomain',
+                        'requestParameters' => [ 
+                                'Bucket' => [ 
+                                        'required' => true,
+                                        'type' => 'string',
+                                        'location' => 'dns'
+                                ]
+                        ],
+                        'responseParameters' => [ 
+                                'type' => 'object',
+                                'properties' => [
+                                        'RequestId' => [ 
+                                                'location' => 'header',
+                                                'sentAs' => 'x-obs-request-id'
+                                        ],
+                                        'Domains' => [ 
+                                                'type' => 'array',
+                                                'location' => 'xml',
+                                                'sentAs' => 'Domains',
+                                                'data' => [ 
+                                                        'xmlFlattened' => true
+                                                ],
+                                                'items' => [
+                                                        'type' => 'object',
+                                                        'properties' => [
+                                                                'DomainName' => [ 
+                                                                        'type' => 'string',
+                                                                        'location' => 'xml',
+                                                                        'sentAs' => 'DomainName'
+                                                                ],
+                                                                'CreateTime' => [ 
+                                                                        'type' => 'string',
+                                                                        'location' => 'xml',
+                                                                        'sentAs' => 'CreateTime'
+                                                                ],
+                                                        ]
+                                                ]
+                                        ]
+                                ]
+                        ]
+                    ],
+
+                    'deleteBucketCustomDomain' => [
+                        'httpMethod' => 'DELETE',
+                        'requestParameters' => [ 
+                                'Bucket' => [ 
+                                        'required' => true,
+                                        'type' => 'string',
+                                        'location' => 'dns'
+                                ],
+                                'DomainName' => [
+                                        'required' => true,
+                                        'type' => 'string',
+                                        'location' => 'query',
+                                        'sentAs' => 'customdomain'
+                                ]
+                        ],
+                        'responseParameters' => [ 
+                                'RequestId' => [ 
+                                        'location' => 'header',
+                                        'sentAs' => 'x-obs-request-id'
+                                ]
+                        ]
+                    ],
             ],
 
             'aliases' => [ 
