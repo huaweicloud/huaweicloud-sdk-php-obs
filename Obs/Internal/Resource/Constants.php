@@ -49,6 +49,7 @@ class Constants {
             'response-content-disposition',
             'response-content-encoding',
             'x-image-process',
+            'x-obs-security-token',
 
             'backtosource',
             'storageclass',
