@@ -47,7 +47,7 @@ class SdkCurlFactory implements CurlFactoryInterface
             $options['_body_as_string'] = $options['curl']['body_as_string'];
             unset($options['curl']['body_as_string']);
         }
-        
+
         $easy = new EasyHandle;
         $easy->request = $request;
         $easy->options = $options;
@@ -55,8 +55,7 @@ class SdkCurlFactory implements CurlFactoryInterface
         $this->applyMethod($easy, $conf);
         $this->applyHandlerOptions($easy, $conf);
         $this->applyHeaders($easy, $conf);
-        
-        
+
         unset($conf['_headers']);
 
         if (isset($options['curl'])) {
@@ -64,25 +63,25 @@ class SdkCurlFactory implements CurlFactoryInterface
         }
 
         $conf[CURLOPT_HEADERFUNCTION] = $this->createHeaderFn($easy);
-        if($this->handles){
-           $easy->handle = array_pop($this->handles);
-        }else{
-           $easy->handle = curl_init();
+        if ($this->handles) {
+            $easy->handle = array_pop($this->handles);
+        } else {
+            $easy->handle = curl_init();
         }
         curl_setopt_array($easy->handle, $conf);
 
         return $easy;
     }
-    
+
     public function close()
     {
-    	if($this->handles){
-    		foreach ($this->handles as $handle){
-    			curl_close($handle);
-    		}
- 			unset($this->handles);
- 			$this->handles = [];
-    	}
+        if ($this->handles) {
+            foreach ($this->handles as $handle) {
+                curl_close($handle);
+            }
+            unset($this->handles);
+            $this->handles = [];
+        }
     }
 
     public function release(EasyHandle $easy): void
@@ -133,18 +132,18 @@ class SdkCurlFactory implements CurlFactoryInterface
     {
         $body = $easy->request->getBody();
         $size = $body->getSize();
-        
+
         if ($size === null || $size > 0) {
             $this->applyBody($easy->request, $easy->options, $conf);
             return;
         }
 
         $method = $easy->request->getMethod();
-        if ($method === 'PUT' || $method === 'POST') {
-            if (!$easy->request->hasHeader('Content-Length')) {
-                $conf[CURLOPT_HTTPHEADER][] = 'Content-Length: 0';
-            }
-        } elseif ($method === 'HEAD') {
+        if (($method === 'PUT' || $method === 'POST') && (!$easy->request->hasHeader('Content-Length'))) {
+            $conf[CURLOPT_HTTPHEADER][] = 'Content-Length: 0';
+        }
+
+        if ($method === 'HEAD') {
             $conf[CURLOPT_NOBODY] = true;
             unset(
                 $conf[CURLOPT_WRITEFUNCTION],
@@ -160,45 +159,43 @@ class SdkCurlFactory implements CurlFactoryInterface
         $size = $request->hasHeader('Content-Length')
             ? (int) $request->getHeaderLine('Content-Length')
             : $request->getBody()->getSize();
-		            
-        if($request->getBody()->getSize() === $size && $request -> getBody() ->tell() <= 0){
-	        if (($size !== null && $size < 1000000) ||
-	            !empty($options['_body_as_string'])
-	        ) {
-	            $conf[CURLOPT_POSTFIELDS] = (string) $request->getBody();
-	            $this->removeHeader('Content-Length', $conf);
-	            $this->removeHeader('Transfer-Encoding', $conf);
-	        } else {
-	            $conf[CURLOPT_UPLOAD] = true;
-	            if ($size !== null) {
-	                $conf[CURLOPT_INFILESIZE] = $size;
-	                $this->removeHeader('Content-Length', $conf);
-	            }
-	            $body = $request->getBody();
-	            if ($body->isSeekable()) {
-	                $body->rewind();
-	            }
-	            $conf[CURLOPT_READFUNCTION] = function ($ch, $fd, $length) use ($body) {
-	                return $body->read($length);
-	            };
-	        }
-        }else{
-        	$body = $request->getBody();
-        	$conf[CURLOPT_UPLOAD] = true;
-        	$conf[CURLOPT_INFILESIZE] = $size;
-        	$readCount = 0;
-        	$conf[CURLOPT_READFUNCTION] = function ($ch, $fd, $length) use ($body, $readCount, $size) {
-        		if($readCount >= $size){
-        			$body -> close();
-        			return '';
-        		}
-        		$readCountOnce = $length <= $size ? $length : $size;
-        		$readCount += $readCountOnce;
-        		return $body->read($readCountOnce);
-        	};
+        
+        if ($request->getBody()->getSize() === $size && $request->getBody()->tell() <= 0) {
+            if (($size !== null && $size < 1000000) ||
+                !empty($options['_body_as_string'])
+            ) {
+                $conf[CURLOPT_POSTFIELDS] = (string) $request->getBody();
+                $this->removeHeader('Content-Length', $conf);
+                $this->removeHeader('Transfer-Encoding', $conf);
+            } else {
+                $conf[CURLOPT_UPLOAD] = true;
+                if ($size !== null) {
+                    $conf[CURLOPT_INFILESIZE] = $size;
+                    $this->removeHeader('Content-Length', $conf);
+                }
+                $body = $request->getBody();
+                if ($body->isSeekable()) {
+                    $body->rewind();
+                }
+                $conf[CURLOPT_READFUNCTION] = function ($ch, $fd, $length) use ($body) {
+                    return $body->read($length);
+                };
+            }
+        } else {
+            $body = $request->getBody();
+            $conf[CURLOPT_UPLOAD] = true;
+            $conf[CURLOPT_INFILESIZE] = $size;
+            $readCount = 0;
+            $conf[CURLOPT_READFUNCTION] = function ($ch, $fd, $length) use ($body, $readCount, $size) {
+                if ($readCount >= $size) {
+                    $body->close();
+                    return '';
+                }
+                $readCountOnce = $length <= $size ? $length : $size;
+                $readCount += $readCountOnce;
+                return $body->read($readCountOnce);
+            };
         }
-            
-            
 
         if (!$request->hasHeader('Expect')) {
             $conf[CURLOPT_HTTPHEADER][] = 'Expect:';
@@ -237,7 +234,7 @@ class SdkCurlFactory implements CurlFactoryInterface
     {
         $options = $easy->options;
         if (isset($options['verify'])) {
-        	$conf[CURLOPT_SSL_VERIFYHOST] = 0;
+            $conf[CURLOPT_SSL_VERIFYHOST] = 0;
             if ($options['verify'] === false) {
                 unset($conf[CURLOPT_CAINFO]);
                 $conf[CURLOPT_SSL_VERIFYPEER] = false;
@@ -278,7 +275,7 @@ class SdkCurlFactory implements CurlFactoryInterface
                     $sink = Psr7\Utils::streamFor($sink);
                 }
             } elseif (!is_dir(dirname($sink))) {
-                throw new \RuntimeException(sprintf(
+                throw new \InvalidArgumentException(sprintf(
                     'Directory %s does not exist for sink value of %s',
                     dirname($sink),
                     $sink
@@ -307,7 +304,8 @@ class SdkCurlFactory implements CurlFactoryInterface
         if (isset($options['force_ip_resolve'])) {
             if ('v4' === $options['force_ip_resolve']) {
                 $conf[CURLOPT_IPRESOLVE] = CURL_IPRESOLVE_V4;
-            } else if ('v6' === $options['force_ip_resolve']) {
+            }
+            if ('v6' === $options['force_ip_resolve']) {
                 $conf[CURLOPT_IPRESOLVE] = CURL_IPRESOLVE_V6;
             }
         }
@@ -387,7 +385,6 @@ class SdkCurlFactory implements CurlFactoryInterface
             $conf[CURLOPT_VERBOSE] = true;
         }
     }
-
 
     private function createHeaderFn(EasyHandle $easy)
     {

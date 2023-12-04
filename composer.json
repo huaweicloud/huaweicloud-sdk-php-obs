@@ -2,7 +2,7 @@
 	"name" : "obs/esdk-obs-php",
 	"description" : "OBS PHP SDK",
 	"license":"Apache-2.0",
-	"version":"3.23.5",
+	"version":"3.23.11",
 	"require" : {
 		"php" : ">=5.6.0",
 		"guzzlehttp/guzzle" : "^6.3.0 || ^7.0",

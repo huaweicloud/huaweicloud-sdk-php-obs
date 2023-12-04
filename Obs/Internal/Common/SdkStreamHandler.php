@@ -24,11 +24,10 @@
 
 namespace Obs\Internal\Common;
 
-use GuzzleHttp\Exception\RequestException;
-use GuzzleHttp\Exception\ConnectException;
-use GuzzleHttp\Promise\FulfilledPromise;
-use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Psr7;
+use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Promise\FulfilledPromise;
 use GuzzleHttp\TransferStats;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -108,7 +107,7 @@ class SdkStreamHandler
         $status = $parts[1];
         $reason = isset($parts[2]) ? $parts[2] : null;
         $headers = \GuzzleHttp\headers_from_lines($hdrs);
-        list ($stream, $headers) = $this->checkDecode($options, $headers, $stream);
+        list($stream, $headers) = $this->checkDecode($options, $headers, $stream);
         try {
             $stream = Psr7\stream_for($stream);
         } catch (\Throwable $e) {
@@ -243,7 +242,7 @@ class SdkStreamHandler
                     $message .= "[$key] $value" . PHP_EOL;
                 }
             }
-            throw new \RuntimeException(trim($message));
+            throw new \UnexpectedValueException(trim($message));
         }
 
         return $resource;
@@ -311,7 +310,7 @@ class SdkStreamHandler
 
         return $this->createResource(
             function () use ($uri, &$http_response_header, $context, $options) {
-                $resource = fopen((string) $uri, 'r', null, $context);
+                $resource = fopen((string) $uri, 'r', false, $context);
                 $this->lastHeaders = $http_response_header;
 
                 if (isset($options['read_timeout'])) {
@@ -334,13 +333,20 @@ class SdkStreamHandler
             if ('v4' === $options['force_ip_resolve']) {
                 $records = dns_get_record($uri->getHost(), DNS_A);
                 if (!isset($records[0]['ip'])) {
-                    throw new ConnectException(sprintf("Could not resolve IPv4 address for host '%s'", $uri->getHost()), $request);
+                    throw new ConnectException(
+                        sprintf("Could not resolve IPv4 address for host '%s'", $uri->getHost()),
+                        $request
+                    );
                 }
                 $uri = $uri->withHost($records[0]['ip']);
-            } elseif ('v6' === $options['force_ip_resolve']) {
+            }
+            if ('v6' === $options['force_ip_resolve']) {
                 $records = dns_get_record($uri->getHost(), DNS_AAAA);
                 if (!isset($records[0]['ipv6'])) {
-                    throw new ConnectException(sprintf("Could not resolve IPv6 address for host '%s'", $uri->getHost()), $request);
+                    throw new ConnectException(
+                        sprintf("Could not resolve IPv6 address for host '%s'", $uri->getHost()),
+                        $request
+                    );
                 }
                 $uri = $uri->withHost('[' . $records[0]['ipv6'] . ']');
             }
@@ -380,140 +386,5 @@ class SdkStreamHandler
         $context['http']['header'] = rtrim($context['http']['header']);
 
         return $context;
-    }
-
-    private function add_proxy(RequestInterface $request, &$options, $value, &$params)
-    {
-        if (!is_array($value)) {
-            $options['http']['proxy'] = $value;
-        } else {
-            $scheme = $request->getUri()->getScheme();
-            if (isset($value[$scheme])) {
-                if (!isset($value['no'])
-                    || !\GuzzleHttp\is_host_in_noproxy(
-                        $request->getUri()->getHost(),
-                        $value['no']
-                    )
-                ) {
-                    $options['http']['proxy'] = $value[$scheme];
-                }
-            }
-        }
-    }
-
-    private function add_timeout(RequestInterface $request, &$options, $value, &$params)
-    {
-        if ($value > 0) {
-            $options['http']['timeout'] = $value;
-        }
-    }
-
-    private function add_verify(RequestInterface $request, &$options, $value, &$params)
-    {
-        if ($value === true) {
-            if (PHP_VERSION_ID < 50600) {
-                $options['ssl']['cafile'] = \GuzzleHttp\default_ca_bundle();
-            }
-        } elseif (is_string($value)) {
-            $options['ssl']['cafile'] = $value;
-            if (!file_exists($value)) {
-                throw new \RuntimeException("SSL CA bundle not found: $value");
-            }
-        } elseif ($value === false) {
-            $options['ssl']['verify_peer'] = false;
-            $options['ssl']['verify_peer_name'] = false;
-            return;
-        } else {
-            throw new \InvalidArgumentException('Invalid verify request option');
-        }
-
-        $options['ssl']['verify_peer'] = true;
-        $options['ssl']['verify_peer_name'] = true;
-        $options['ssl']['allow_self_signed'] = false;
-    }
-
-    private function add_cert(RequestInterface $request, &$options, $value, &$params)
-    {
-        if (is_array($value)) {
-            $options['ssl']['passphrase'] = $value[1];
-            $value = $value[0];
-        }
-
-        if (!file_exists($value)) {
-            throw new \RuntimeException("SSL certificate not found: {$value}");
-        }
-
-        $options['ssl']['local_cert'] = $value;
-    }
-
-    private function add_progress(RequestInterface $request, &$options, $value, &$params)
-    {
-        $this->addNotification(
-            $params,
-            function ($code, $a, $b, $c, $transferred, $total) use ($value) {
-                if ($code == STREAM_NOTIFY_PROGRESS) {
-                    $value($total, $transferred, null, null);
-                }
-            }
-        );
-    }
-
-    private function add_debug(RequestInterface $request, &$options, $value, &$params)
-    {
-        if ($value === false) {
-            return;
-        }
-
-        static $map = [
-            STREAM_NOTIFY_CONNECT       => 'CONNECT',
-            STREAM_NOTIFY_AUTH_REQUIRED => 'AUTH_REQUIRED',
-            STREAM_NOTIFY_AUTH_RESULT   => 'AUTH_RESULT',
-            STREAM_NOTIFY_MIME_TYPE_IS  => 'MIME_TYPE_IS',
-            STREAM_NOTIFY_FILE_SIZE_IS  => 'FILE_SIZE_IS',
-            STREAM_NOTIFY_REDIRECTED    => 'REDIRECTED',
-            STREAM_NOTIFY_PROGRESS      => 'PROGRESS',
-            STREAM_NOTIFY_FAILURE       => 'FAILURE',
-            STREAM_NOTIFY_COMPLETED     => 'COMPLETED',
-            STREAM_NOTIFY_RESOLVE       => 'RESOLVE',
-        ];
-        static $args = ['severity', 'message', 'message_code',
-            'bytes_transferred', 'bytes_max'];
-
-        $value = \GuzzleHttp\debug_resource($value);
-        $ident = $request->getMethod() . ' ' . $request->getUri()->withFragment('');
-        $this->addNotification(
-            $params,
-            function () use ($ident, $value, $map, $args) {
-                $passed = func_get_args();
-                $code = array_shift($passed);
-                fprintf($value, '<%s> [%s] ', $ident, $map[$code]);
-                foreach (array_filter($passed) as $i => $v) {
-                    fwrite($value, $args[$i] . ': "' . $v . '" ');
-                }
-                fwrite($value, "\n");
-            }
-        );
-    }
-
-    private function addNotification(array &$params, callable $notify)
-    {
-        if (!isset($params['notification'])) {
-            $params['notification'] = $notify;
-        } else {
-            $params['notification'] = $this->callArray([
-                $params['notification'],
-                $notify
-            ]);
-        }
-    }
-
-    private function callArray(array $functions)
-    {
-        return function () use ($functions) {
-            $args = func_get_args();
-            foreach ($functions as $fn) {
-                call_user_func_array($fn, $args);
-            }
-        };
     }
 }

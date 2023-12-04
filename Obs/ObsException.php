@@ -23,10 +23,10 @@ use Obs\Log\ObsLog;
 
 class ObsException extends \RuntimeException
 {
-	const CLIENT = 'client';
-	
-	const SERVER = 'server';
-	
+    const CLIENT = 'client';
+
+    const SERVER = 'server';
+
     private $response;
 
     private $request;
@@ -34,18 +34,18 @@ class ObsException extends \RuntimeException
     private $requestId;
 
     private $exceptionType;
-        
+
     private $exceptionCode;
-    
+
     private $exceptionMessage;
-    
+
     private $hostId;
-	
-    public function __construct ($message = null, $code = null, $previous = null) 
+
+    public function __construct($message = null, $code = null, $previous = null)
     {
-    	parent::__construct($message, $code, $previous);
+        parent::__construct($message, $code, $previous);
     }
-    
+
     public function setExceptionCode($exceptionCode)
     {
         $this->exceptionCode = $exceptionCode;
@@ -55,15 +55,15 @@ class ObsException extends \RuntimeException
     {
         return $this->exceptionCode;
     }
-    
+
     public function setExceptionMessage($exceptionMessage)
     {
         $this->exceptionMessage = $exceptionMessage;
     }
-    
+
     public function getExceptionMessage()
     {
-    	return $this->exceptionMessage ? $this->exceptionMessage : $this->message;
+        return $this->exceptionMessage ? $this->exceptionMessage : $this->message;
     }
 
     public function setExceptionType($exceptionType)
@@ -110,31 +110,38 @@ class ObsException extends \RuntimeException
     {
         return $this->response ? $this->response->getStatusCode() : -1;
     }
-    
-    public function setHostId($hostId){
-    	$this->hostId = $hostId;
+
+    public function setHostId($hostId)
+    {
+        $this->hostId = $hostId;
     }
-    
-    public function getHostId(){
-    	return $this->hostId;
+
+    public function getHostId()
+    {
+        return $this->hostId;
     }
 
     public function __toString()
     {
-        $message = get_class($this) . ': '
-            . 'OBS Error Code: ' . $this->getExceptionCode() . ', '
-            . 'Status Code: ' . $this->getStatusCode() . ', '
-            . 'OBS Error Type: ' . $this->getExceptionType() . ', '
-            . 'OBS Error Message: ' . ($this->getExceptionMessage() ? $this->getExceptionMessage():$this->getMessage());
+        $className = get_class($this);
+        $statusCode = $this->getStatusCode();
 
+        $errCodeMsg = "OBS Error Code: {$statusCode}";
+        $statusCodeMsg = "Status Code: {$this->getStatusCode()}";
+        $errTypeMsg = "OBS Error Type: {$this->getExceptionType()}";
+        $errMsg = $this->getExceptionMessage() ? $this->getExceptionMessage() : $this->getMessage();
+        $newErrMsg = "OBS Error Message: {$errMsg}";
+        $message = "{$className}: {$errCodeMsg}, {$statusCodeMsg}, {$errTypeMsg}, $newErrMsg";
         // Add the User-Agent if available
         if ($this->request) {
-            $message .= ', ' . 'User-Agent: ' . $this->request->getHeaderLine('User-Agent');
+            $message = "{$message}, 'User-Agent: {$this->request->getHeaderLine('User-Agent')}";
         }
         $message .= "\n";
-        
-        ObsLog::commonLog(INFO, "http request:status:%d, %s",$this->getStatusCode(),"code:".$this->getExceptionCode().", message:".$this->getMessage());
+
+        ObsLog::commonLog(INFO,
+            "http request:status:%d, %s",
+            $statusCode, "code:{$this->getExceptionCode()}, message:{$errMsg}");
+
         return $message;
     }
-    
 }

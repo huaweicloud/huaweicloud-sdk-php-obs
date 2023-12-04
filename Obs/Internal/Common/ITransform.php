@@ -17,7 +17,7 @@
 
 namespace Obs\Internal\Common;
 
-interface ITransform {
+interface ITransform
+{
     public function transform($sign, $para);
 }
-
