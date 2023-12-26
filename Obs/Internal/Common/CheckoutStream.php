@@ -33,7 +33,7 @@ class CheckoutStream implements StreamInterface
         $this->expectedLength = $expectedLength;
     }
 
-    public function getContents()
+    public function getContents():string
     {
         $contents = $this->stream->getContents();
         $length = strlen($contents);
@@ -43,9 +43,9 @@ class CheckoutStream implements StreamInterface
         return $contents;
     }
 
-    public function read($length)
+    public function read($length):string
     {
-        $string = $this->stream->read($length);
+        $string = $this->stream->read(int)$length);
         if ($this->expectedLength !== null) {
             $this->readedCount += strlen($string);
             if ($this->stream->eof() && floatval($this->readedCount) !== $this->expectedLength) {
