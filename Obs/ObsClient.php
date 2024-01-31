@@ -237,7 +237,7 @@ class ObsClient
 
     private $factorys;
 
-    public function __construct(array $config = [])
+    public function __construct(array $config = [], ?Client $httpClient=null)
     {
         $this->factorys = [];
 
@@ -317,9 +317,12 @@ class ObsClient
             $this->pathStyle = true;
         }
 
-        $handler = self::chooseHandler($this);
-
-        $this->httpClient = self::createHttpClient($handler);
+        if ($httpClient === null) {
+            $handler = self::chooseHandler($this, $httpClient);
+            $this->httpClient = self::createHttpClient($handler);
+        } else {
+            $this->httpClient = $httpClient;
+        }
     }
 
     private function createHttpClient($handler)
