@@ -84,6 +84,11 @@ class SdkCurlFactory implements CurlFactoryInterface
         }
     }
 
+    public function __destruct()
+    {
+        $this->close();
+    }
+
     public function release(EasyHandle $easy): void
     {
         $resource = $easy->handle;
@@ -159,7 +164,7 @@ class SdkCurlFactory implements CurlFactoryInterface
         $size = $request->hasHeader('Content-Length')
             ? (int) $request->getHeaderLine('Content-Length')
             : $request->getBody()->getSize();
-        
+
         if ($request->getBody()->getSize() === $size && $request->getBody()->tell() <= 0) {
             if (($size !== null && $size < 1000000) ||
                 !empty($options['_body_as_string'])
