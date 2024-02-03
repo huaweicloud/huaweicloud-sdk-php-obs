@@ -235,7 +235,7 @@ class ObsClient
     use Internal\SendRequestTrait;
     use Internal\GetResponseTrait;
 
-    public function __construct(array $config = [], ?Client $httpClient=null)
+    public function __construct(array $config = [], $httpClient=null)
     {
         $this->ak = strval($config['key']);
         $this->sk = strval($config['secret']);
