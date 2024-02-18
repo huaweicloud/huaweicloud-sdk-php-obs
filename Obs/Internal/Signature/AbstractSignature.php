@@ -441,7 +441,7 @@ abstract class AbstractSignature implements SignatureInterface
             $headers['Content-Type'] = 'application/xml';
             $result['body'] = implode('', $body);
 
-            ObsLog::commonLog(DEBUG, 'request content ' . $result['body']);
+            ObsLog::debug('request content ' . $result['body']);
 
             if (isset($requestConfig['data']['contentMd5']) && $requestConfig['data']['contentMd5']) {
                 $headers['Content-MD5'] = base64_encode(md5($result['body'], true));

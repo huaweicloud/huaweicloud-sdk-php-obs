@@ -375,16 +375,16 @@ class ObsClient
         return new ObsClient($config);
     }
 
-    public function initLog(array $logConfig = [])
+    public function initLog(Logger $logger)
     {
-        ObsLog::initLog($logConfig);
+        ObsLog::setLogger($logger);
 
         $msg = [];
         $msg[] = '[OBS SDK Version=' . self::SDK_VERSION;
         $msg[] = 'Endpoint=' . $this->endpoint;
         $msg[] = 'Access Mode=' . ($this->pathStyle ? 'Path' : 'Virtual Hosting') . ']';
 
-        ObsLog::commonLog(WARNING, implode("];[", $msg));
+        ObsLog::warning(implode("];[", $msg));
     }
 
     public static function makeHandler($handler=null)

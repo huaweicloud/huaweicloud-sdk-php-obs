@@ -138,7 +138,7 @@ class ObsException extends \RuntimeException
         }
         $message .= "\n";
 
-        ObsLog::commonLog(INFO,
+        ObsLog::info(
             "http request:status:%d, %s",
             $statusCode, "code:{$this->getExceptionCode()}, message:{$errMsg}");
 

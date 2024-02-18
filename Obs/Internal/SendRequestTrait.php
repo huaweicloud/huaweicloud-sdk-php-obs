@@ -557,7 +557,7 @@ trait SendRequestTrait
         $resource['operations'][$method] : null;
 
         if (!$operation) {
-            ObsLog::commonLog(WARNING, 'unknow method ' . $originMethod);
+            ObsLog::warning('unknow method ' . $originMethod);
             $obsException = new ObsException('unknow method ' . $originMethod);
             $obsException->setExceptionType('client');
             throw $obsException;
@@ -565,23 +565,23 @@ trait SendRequestTrait
 
         $start = microtime(true);
         if (!$async) {
-            ObsLog::commonLog(INFO, 'enter method ' . $originMethod . '...');
+            ObsLog::info('enter method ' . $originMethod . '...');
             $model = new Model();
             $model['method'] = $method;
             $params = empty($args) ? [] : $args[0];
             $this->checkMimeType($method, $params);
             $this->doRequest($model, $operation, $params);
-            ObsLog::commonLog(INFO, 'obsclient cost ' . round(microtime(true) - $start, 3) * 1000 . ' ms to execute ' . $originMethod);
+            ObsLog::info('obsclient cost ' . round(microtime(true) - $start, 3) * 1000 . ' ms to execute ' . $originMethod);
             unset($model['method']);
             return $model;
         } else {
             if (empty($args) || !(is_callable($callback = $args[count($args) - 1]))) {
-                ObsLog::commonLog(WARNING, 'async method ' . $originMethod . ' must pass a CallbackInterface as param');
+                ObsLog::warning('async method ' . $originMethod . ' must pass a CallbackInterface as param');
                 $obsException = new ObsException('async method ' . $originMethod . ' must pass a CallbackInterface as param');
                 $obsException->setExceptionType('client');
                 throw $obsException;
             }
-            ObsLog::commonLog(INFO, 'enter method ' . $originMethod . '...');
+            ObsLog::info('enter method ' . $originMethod . '...');
             $params = count($args) === 1 ? [] : $args[0];
             $this->checkMimeType($method, $params);
             $model = new Model();
@@ -656,9 +656,9 @@ trait SendRequestTrait
         );
         $authResult = $signatureInterface->doAuth($operation, $params, $model);
         $httpMethod = $authResult['method'];
-        ObsLog::commonLog(DEBUG, 'perform ' . strtolower($httpMethod) . ' request with url ' . $authResult['requestUrl']);
-        ObsLog::commonLog(DEBUG, 'cannonicalRequest:' . $authResult['cannonicalRequest']);
-        ObsLog::commonLog(DEBUG, 'request headers ' . var_export($authResult['headers'], true));
+        ObsLog::debug('perform ' . strtolower($httpMethod) . ' request with url ' . $authResult['requestUrl']);
+        ObsLog::debug('cannonicalRequest:' . $authResult['cannonicalRequest']);
+        ObsLog::debug('request headers ' . var_export($authResult['headers'], true));
         $authResult['headers']['User-Agent'] = ObsClient::getDefaultUserAgent();
         if ($model['method'] === 'putObject') {
             $model['ObjectURL'] = ['value' => $authResult['requestUrl']];
@@ -706,7 +706,7 @@ trait SendRequestTrait
         $promise = $this->httpClient->sendAsync($request, ['stream' => $saveAsStream])->then(
             function (Response $response) use ($model, $operation, $params, $request, $requestCount, $start) {
 
-                ObsLog::commonLog(INFO, 'http request cost ' . round(microtime(true) - $start, 3) * 1000 . ' ms');
+                ObsLog::info('http request cost ' . round(microtime(true) - $start, 3) * 1000 . ' ms');
                 $statusCode = $response->getStatusCode();
                 $readable = isset($params['Body']) && ($params['Body'] instanceof StreamInterface || is_resource($params['Body']));
                 $isRetryRequest = $statusCode >= 300 && $statusCode < 400 && $statusCode !== 304 && !$readable && $requestCount <= $this->maxRetryCount;
@@ -725,7 +725,7 @@ trait SendRequestTrait
             },
             function (RequestException $exception) use ($model, $operation, $params, $request, $requestCount, $start) {
 
-                ObsLog::commonLog(INFO, 'http request cost ' . round(microtime(true) - $start, 3) * 1000 . ' ms');
+                ObsLog::info('http request cost ' . round(microtime(true) - $start, 3) * 1000 . ' ms');
                 $message = null;
                 if ($exception instanceof ConnectException) {
                     if ($requestCount <= $this->maxRetryCount) {
@@ -775,7 +775,7 @@ trait SendRequestTrait
         }
         return $this->httpClient->sendAsync($request, ['stream' => $saveAsStream])->then(
             function (Response $response) use ($model, $operation, $params, $callback, $startAsync, $originMethod, $request, $start) {
-                ObsLog::commonLog(INFO, 'http request cost ' . round(microtime(true) - $start, 3) * 1000 . ' ms');
+                ObsLog::info('http request cost ' . round(microtime(true) - $start, 3) * 1000 . ' ms');
                 $statusCode = $response->getStatusCode();
 
                 $readable = isset($params['Body']) && ($params['Body'] instanceof StreamInterface || is_resource($params['Body']));
@@ -792,12 +792,12 @@ trait SendRequestTrait
                     }
                 }
                 $this->parseResponse($model, $request, $response, $operation);
-                ObsLog::commonLog(INFO, 'obsclient cost ' . round(microtime(true) - $startAsync, 3) * 1000 . ' ms to execute ' . $originMethod);
+                ObsLog::info('obsclient cost ' . round(microtime(true) - $startAsync, 3) * 1000 . ' ms to execute ' . $originMethod);
                 unset($model['method']);
                 $callback(null, $model);
             },
             function (RequestException $exception) use ($model, $operation, $params, $callback, $startAsync, $originMethod, $request, $start, $requestCount) {
-                ObsLog::commonLog(INFO, 'http request cost ' . round(microtime(true) - $start, 3) * 1000 . ' ms');
+                ObsLog::info('http request cost ' . round(microtime(true) - $start, 3) * 1000 . ' ms');
                 $message = null;
                 if ($exception instanceof ConnectException) {
                     if ($requestCount <= $this->maxRetryCount) {
@@ -807,7 +807,7 @@ trait SendRequestTrait
                     }
                 }
                 $obsException = $this->parseExceptionAsync($request, $exception, $message);
-                ObsLog::commonLog(INFO, 'obsclient cost ' . round(microtime(true) - $startAsync, 3) * 1000 . ' ms to execute ' . $originMethod);
+                ObsLog::info('obsclient cost ' . round(microtime(true) - $startAsync, 3) * 1000 . ' ms to execute ' . $originMethod);
                 $callback($obsException, null);
             }
         );
