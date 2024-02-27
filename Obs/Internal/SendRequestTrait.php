@@ -178,10 +178,16 @@ trait SendRequestTrait
 
         $model = new Model();
         $model['ActualSignedRequestHeaders'] = $headers;
-        $defaultPort = strtolower($url['scheme']) === 'https' ? '443' : '80';
-        $port = isset($url['port']) ? $url['port'] : $defaultPort;
-        $model['SignedUrl'] = $url['scheme'] . '://' . $host . ':' . $port . $result;
+        $port = isset($url['port']) ? $url['port'] : '';
+        $model['SignedUrl'] = $this->joinUrl($url['scheme'], $host, $port, $result);
         return $model;
+    }
+
+    private function joinUrl($scheme, $host, $port, $query='')
+    {
+        $defaultPort = strtolower($scheme) === 'https' ? '443' : '80';
+        $port = $port ?: $defaultPort;
+        return $scheme . '://' . $host . ($port == $defaultPort ? '' : ':' . $port ) . $query;
     }
 
     public function createV4SignedUrl(array $args = [])
@@ -328,9 +334,8 @@ trait SendRequestTrait
 
         $model = new Model();
         $model['ActualSignedRequestHeaders'] = $headers;
-        $defaultPort = strtolower($url['scheme']) === 'https' ? '443' : '80';
-        $port = isset($url['port']) ? $url['port'] : $defaultPort;
-        $model['SignedUrl'] = $url['scheme'] . '://' . $host . ':' . $port . $result;
+        $port = isset($url['port']) ? $url['port'] : '';
+        $model['SignedUrl'] = $this->joinUrl($url['scheme'], $host, $port, $result);
         return $model;
     }
 
@@ -712,12 +717,10 @@ trait SendRequestTrait
                 $isRetryRequest = $statusCode >= 300 && $statusCode < 400 && $statusCode !== 304 && !$readable && $requestCount <= $this->maxRetryCount;
                 $location = $response->getHeaderLine('location');
                 if ($isRetryRequest && $location) {
-                    $url = parse_url($this->endpoint);
                     $newUrl = parse_url($location);
-                    $scheme = (isset($newUrl['scheme']) ? $newUrl['scheme'] : $url['scheme']);
-                    $defaultPort = strtolower($scheme) === 'https' ? '443' : '80';
-                    $port = isset($newUrl['port']) ? $newUrl['port'] : $defaultPort;
-                    $newEndpoint = $scheme . '://' . $newUrl['host'] . ':' . $port;
+                    $scheme = isset($newUrl['scheme']) ? $newUrl['scheme'] : parse_url($this->endpoint, PHP_URL_SCHEME);
+                    $port = isset($newUrl['port']) ? $newUrl['port'] : '';
+                    $newEndpoint = $this->joinUrl($scheme, $newUrl['host'], $port);
                     $this->doRequest($model, $operation, $params, $newEndpoint);
                     return;
                 }
@@ -782,12 +785,10 @@ trait SendRequestTrait
                 if ($statusCode === 307 && !$readable) {
                     $location = $response->getHeaderLine('location');
                     if ($location) {
-                        $url = parse_url($this->endpoint);
                         $newUrl = parse_url($location);
-                        $scheme = (isset($newUrl['scheme']) ? $newUrl['scheme'] : $url['scheme']);
-                        $defaultPort = strtolower($scheme) === 'https' ? '443' : '80';
-                        $port = isset($newUrl['port']) ? $newUrl['port'] : $defaultPort;
-                        $newEndpoint = $scheme . '://' . $newUrl['host'] . ':' . $port;
+                        $scheme = isset($newUrl['scheme']) ? $newUrl['scheme'] : parse_url($this->endpoint, PHP_URL_SCHEME);
+                        $port = isset($newUrl['port']) ? $newUrl['port'] : '';
+                        $newEndpoint = $this->joinUrl($scheme, $newUrl['host'], $port);
                         return $this->doRequestAsync($model, $operation, $params, $callback, $startAsync, $originMethod, $newEndpoint);
                     }
                 }
