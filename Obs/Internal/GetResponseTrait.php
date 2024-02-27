@@ -206,8 +206,7 @@ trait GetResponseTrait
                                 if (is_array($data)) {
                                     $model[$key] = $data;
                                 } elseif (strlen($data)) {
-                                    ObsLog::commonLog(
-                                        ERROR,
+                                    ObsLog::error(
                                         "response body %s, and jsonToArray data is %s",
                                         $body,
                                         $data
@@ -250,9 +249,9 @@ trait GetResponseTrait
                         fwrite($fp, $str);
                     }
                     fflush($fp);
-                    ObsLog::commonLog(DEBUG, "write file %s ok", $filePath);
+                    ObsLog::debug("write file %s ok", $filePath);
                 } else {
-                    ObsLog::commonLog(ERROR, "open file error,file path:%s", $filePath);
+                    ObsLog::error("open file error,file path:%s", $filePath);
                 }
             } finally {
                 if ($fp) {
@@ -308,7 +307,7 @@ trait GetResponseTrait
                         $obsException->setExceptionMessage(strval($data['message']));
                     }
                 } elseif ($data && strlen($data)) {
-                    ObsLog::commonLog(ERROR, "response body %s, and jsonToArray data is %s", $body, $data);
+                    ObsLog::error("response body %s, and jsonToArray data is %s", $body, $data);
                     $obsException->setExceptionMessage("Invalid response data，since it is not json data");
                 } else {
                     // nothing handle
@@ -336,7 +335,7 @@ trait GetResponseTrait
                         $model['Message'] = strval($jsonArray['message']);
                     }
                 } elseif ($jsonArray && strlen($jsonArray)) {
-                    ObsLog::commonLog(ERROR, "response body %s, and jsonToArray data is %s", $body, $jsonArray);
+                    ObsLog::error("response body %s, and jsonToArray data is %s", $body, $jsonArray);
                     $model['Message'] = "Invalid response data，since it is not json data";
                 } else {
                     // nothing handle

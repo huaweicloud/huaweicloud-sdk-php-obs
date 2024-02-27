@@ -41,7 +41,7 @@ class ObsException extends \RuntimeException
 
     private $hostId;
 
-    public function __construct($message = null, $code = null, $previous = null)
+    public function __construct($message = '', $code = 0, $previous = null)
     {
         parent::__construct($message, $code, $previous);
     }
@@ -138,7 +138,7 @@ class ObsException extends \RuntimeException
         }
         $message .= "\n";
 
-        ObsLog::commonLog(INFO,
+        ObsLog::info(
             "http request:status:%d, %s",
             $statusCode, "code:{$this->getExceptionCode()}, message:{$errMsg}");
 

@@ -178,10 +178,16 @@ trait SendRequestTrait
 
         $model = new Model();
         $model['ActualSignedRequestHeaders'] = $headers;
-        $defaultPort = strtolower($url['scheme']) === 'https' ? '443' : '80';
-        $port = isset($url['port']) ? $url['port'] : $defaultPort;
-        $model['SignedUrl'] = $url['scheme'] . '://' . $host . ':' . $port . $result;
+        $port = isset($url['port']) ? $url['port'] : '';
+        $model['SignedUrl'] = $this->joinUrl($url['scheme'], $host, $port, $result);
         return $model;
+    }
+
+    private function joinUrl($scheme, $host, $port, $query='')
+    {
+        $defaultPort = strtolower($scheme) === 'https' ? '443' : '80';
+        $port = $port ?: $defaultPort;
+        return $scheme . '://' . $host . ($port == $defaultPort ? '' : ':' . $port ) . $query;
     }
 
     public function createV4SignedUrl(array $args = [])
@@ -328,9 +334,8 @@ trait SendRequestTrait
 
         $model = new Model();
         $model['ActualSignedRequestHeaders'] = $headers;
-        $defaultPort = strtolower($url['scheme']) === 'https' ? '443' : '80';
-        $port = isset($url['port']) ? $url['port'] : $defaultPort;
-        $model['SignedUrl'] = $url['scheme'] . '://' . $host . ':' . $port . $result;
+        $port = isset($url['port']) ? $url['port'] : '';
+        $model['SignedUrl'] = $this->joinUrl($url['scheme'], $host, $port, $result);
         return $model;
     }
 
@@ -557,7 +562,7 @@ trait SendRequestTrait
         $resource['operations'][$method] : null;
 
         if (!$operation) {
-            ObsLog::commonLog(WARNING, 'unknow method ' . $originMethod);
+            ObsLog::warning('unknow method ' . $originMethod);
             $obsException = new ObsException('unknow method ' . $originMethod);
             $obsException->setExceptionType('client');
             throw $obsException;
@@ -565,23 +570,23 @@ trait SendRequestTrait
 
         $start = microtime(true);
         if (!$async) {
-            ObsLog::commonLog(INFO, 'enter method ' . $originMethod . '...');
+            ObsLog::info('enter method ' . $originMethod . '...');
             $model = new Model();
             $model['method'] = $method;
             $params = empty($args) ? [] : $args[0];
             $this->checkMimeType($method, $params);
             $this->doRequest($model, $operation, $params);
-            ObsLog::commonLog(INFO, 'obsclient cost ' . round(microtime(true) - $start, 3) * 1000 . ' ms to execute ' . $originMethod);
+            ObsLog::info('obsclient cost ' . round(microtime(true) - $start, 3) * 1000 . ' ms to execute ' . $originMethod);
             unset($model['method']);
             return $model;
         } else {
             if (empty($args) || !(is_callable($callback = $args[count($args) - 1]))) {
-                ObsLog::commonLog(WARNING, 'async method ' . $originMethod . ' must pass a CallbackInterface as param');
+                ObsLog::warning('async method ' . $originMethod . ' must pass a CallbackInterface as param');
                 $obsException = new ObsException('async method ' . $originMethod . ' must pass a CallbackInterface as param');
                 $obsException->setExceptionType('client');
                 throw $obsException;
             }
-            ObsLog::commonLog(INFO, 'enter method ' . $originMethod . '...');
+            ObsLog::info('enter method ' . $originMethod . '...');
             $params = count($args) === 1 ? [] : $args[0];
             $this->checkMimeType($method, $params);
             $model = new Model();
@@ -656,9 +661,9 @@ trait SendRequestTrait
         );
         $authResult = $signatureInterface->doAuth($operation, $params, $model);
         $httpMethod = $authResult['method'];
-        ObsLog::commonLog(DEBUG, 'perform ' . strtolower($httpMethod) . ' request with url ' . $authResult['requestUrl']);
-        ObsLog::commonLog(DEBUG, 'cannonicalRequest:' . $authResult['cannonicalRequest']);
-        ObsLog::commonLog(DEBUG, 'request headers ' . var_export($authResult['headers'], true));
+        ObsLog::debug('perform ' . strtolower($httpMethod) . ' request with url ' . $authResult['requestUrl']);
+        ObsLog::debug('cannonicalRequest:' . $authResult['cannonicalRequest']);
+        ObsLog::debug('request headers ' . var_export($authResult['headers'], true));
         $authResult['headers']['User-Agent'] = ObsClient::getDefaultUserAgent();
         if ($model['method'] === 'putObject') {
             $model['ObjectURL'] = ['value' => $authResult['requestUrl']];
@@ -706,18 +711,16 @@ trait SendRequestTrait
         $promise = $this->httpClient->sendAsync($request, ['stream' => $saveAsStream])->then(
             function (Response $response) use ($model, $operation, $params, $request, $requestCount, $start) {
 
-                ObsLog::commonLog(INFO, 'http request cost ' . round(microtime(true) - $start, 3) * 1000 . ' ms');
+                ObsLog::info('http request cost ' . round(microtime(true) - $start, 3) * 1000 . ' ms');
                 $statusCode = $response->getStatusCode();
                 $readable = isset($params['Body']) && ($params['Body'] instanceof StreamInterface || is_resource($params['Body']));
                 $isRetryRequest = $statusCode >= 300 && $statusCode < 400 && $statusCode !== 304 && !$readable && $requestCount <= $this->maxRetryCount;
                 $location = $response->getHeaderLine('location');
                 if ($isRetryRequest && $location) {
-                    $url = parse_url($this->endpoint);
                     $newUrl = parse_url($location);
-                    $scheme = (isset($newUrl['scheme']) ? $newUrl['scheme'] : $url['scheme']);
-                    $defaultPort = strtolower($scheme) === 'https' ? '443' : '80';
-                    $port = isset($newUrl['port']) ? $newUrl['port'] : $defaultPort;
-                    $newEndpoint = $scheme . '://' . $newUrl['host'] . ':' . $port;
+                    $scheme = isset($newUrl['scheme']) ? $newUrl['scheme'] : parse_url($this->endpoint, PHP_URL_SCHEME);
+                    $port = isset($newUrl['port']) ? $newUrl['port'] : '';
+                    $newEndpoint = $this->joinUrl($scheme, $newUrl['host'], $port);
                     $this->doRequest($model, $operation, $params, $newEndpoint);
                     return;
                 }
@@ -725,7 +728,7 @@ trait SendRequestTrait
             },
             function (RequestException $exception) use ($model, $operation, $params, $request, $requestCount, $start) {
 
-                ObsLog::commonLog(INFO, 'http request cost ' . round(microtime(true) - $start, 3) * 1000 . ' ms');
+                ObsLog::info('http request cost ' . round(microtime(true) - $start, 3) * 1000 . ' ms');
                 $message = null;
                 if ($exception instanceof ConnectException) {
                     if ($requestCount <= $this->maxRetryCount) {
@@ -775,29 +778,27 @@ trait SendRequestTrait
         }
         return $this->httpClient->sendAsync($request, ['stream' => $saveAsStream])->then(
             function (Response $response) use ($model, $operation, $params, $callback, $startAsync, $originMethod, $request, $start) {
-                ObsLog::commonLog(INFO, 'http request cost ' . round(microtime(true) - $start, 3) * 1000 . ' ms');
+                ObsLog::info('http request cost ' . round(microtime(true) - $start, 3) * 1000 . ' ms');
                 $statusCode = $response->getStatusCode();
 
                 $readable = isset($params['Body']) && ($params['Body'] instanceof StreamInterface || is_resource($params['Body']));
                 if ($statusCode === 307 && !$readable) {
                     $location = $response->getHeaderLine('location');
                     if ($location) {
-                        $url = parse_url($this->endpoint);
                         $newUrl = parse_url($location);
-                        $scheme = (isset($newUrl['scheme']) ? $newUrl['scheme'] : $url['scheme']);
-                        $defaultPort = strtolower($scheme) === 'https' ? '443' : '80';
-                        $port = isset($newUrl['port']) ? $newUrl['port'] : $defaultPort;
-                        $newEndpoint = $scheme . '://' . $newUrl['host'] . ':' . $port;
+                        $scheme = isset($newUrl['scheme']) ? $newUrl['scheme'] : parse_url($this->endpoint, PHP_URL_SCHEME);
+                        $port = isset($newUrl['port']) ? $newUrl['port'] : '';
+                        $newEndpoint = $this->joinUrl($scheme, $newUrl['host'], $port);
                         return $this->doRequestAsync($model, $operation, $params, $callback, $startAsync, $originMethod, $newEndpoint);
                     }
                 }
                 $this->parseResponse($model, $request, $response, $operation);
-                ObsLog::commonLog(INFO, 'obsclient cost ' . round(microtime(true) - $startAsync, 3) * 1000 . ' ms to execute ' . $originMethod);
+                ObsLog::info('obsclient cost ' . round(microtime(true) - $startAsync, 3) * 1000 . ' ms to execute ' . $originMethod);
                 unset($model['method']);
                 $callback(null, $model);
             },
             function (RequestException $exception) use ($model, $operation, $params, $callback, $startAsync, $originMethod, $request, $start, $requestCount) {
-                ObsLog::commonLog(INFO, 'http request cost ' . round(microtime(true) - $start, 3) * 1000 . ' ms');
+                ObsLog::info('http request cost ' . round(microtime(true) - $start, 3) * 1000 . ' ms');
                 $message = null;
                 if ($exception instanceof ConnectException) {
                     if ($requestCount <= $this->maxRetryCount) {
@@ -807,7 +808,7 @@ trait SendRequestTrait
                     }
                 }
                 $obsException = $this->parseExceptionAsync($request, $exception, $message);
-                ObsLog::commonLog(INFO, 'obsclient cost ' . round(microtime(true) - $startAsync, 3) * 1000 . ' ms to execute ' . $originMethod);
+                ObsLog::info('obsclient cost ' . round(microtime(true) - $startAsync, 3) * 1000 . ' ms to execute ' . $originMethod);
                 $callback($obsException, null);
             }
         );

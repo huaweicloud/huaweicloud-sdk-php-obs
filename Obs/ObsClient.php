@@ -235,12 +235,8 @@ class ObsClient
     use Internal\SendRequestTrait;
     use Internal\GetResponseTrait;
 
-    private $factorys;
-
-    public function __construct(array $config = [])
+    public function __construct(array $config = [], $httpClient=null)
     {
-        $this->factorys = [];
-
         $this->ak = strval($config['key']);
         $this->sk = strval($config['secret']);
 
@@ -317,9 +313,12 @@ class ObsClient
             $this->pathStyle = true;
         }
 
-        $handler = self::chooseHandler($this);
-
-        $this->httpClient = self::createHttpClient($handler);
+        if ($httpClient === null) {
+            $handler = self::makeHandler();
+            $this->httpClient = self::createHttpClient($handler);
+        } else {
+            $this->httpClient = $httpClient;
+        }
     }
 
     private function createHttpClient($handler)
@@ -338,10 +337,6 @@ class ObsClient
                 ],
             ]
         );
-    }
-    public function __destruct()
-    {
-        $this->close();
     }
 
     public function refresh($key, $secret, $securityToken = false)
@@ -380,49 +375,35 @@ class ObsClient
         return new ObsClient($config);
     }
 
-    public function close()
+    public function initLog(Logger $logger)
     {
-        if ($this->factorys) {
-            foreach ($this->factorys as $factory) {
-                $factory->close();
-            }
-        }
-    }
-
-    public function initLog(array $logConfig = [])
-    {
-        ObsLog::initLog($logConfig);
+        ObsLog::setLogger($logger);
 
         $msg = [];
         $msg[] = '[OBS SDK Version=' . self::SDK_VERSION;
         $msg[] = 'Endpoint=' . $this->endpoint;
         $msg[] = 'Access Mode=' . ($this->pathStyle ? 'Path' : 'Virtual Hosting') . ']';
 
-        ObsLog::commonLog(WARNING, implode("];[", $msg));
+        ObsLog::warning(implode("];[", $msg));
     }
 
-    private static function chooseHandler($obsclient)
+    public static function makeHandler($handler=null)
     {
-        $handler = null;
-        if (function_exists('curl_multi_exec') && function_exists('curl_exec')) {
-            $f1 = new SdkCurlFactory(50);
-            $f2 = new SdkCurlFactory(3);
-            $obsclient->factorys[] = $f1;
-            $obsclient->factorys[] = $f2;
-            $handler = Proxy::wrapSync(
-                new CurlMultiHandler(['handle_factory' => $f1]),
-                new CurlHandler(['handle_factory' => $f2])
-            );
-        } elseif (function_exists('curl_exec')) {
-            $f = new SdkCurlFactory(3);
-            $obsclient->factorys[] = $f;
-            $handler = new CurlHandler(['handle_factory' => $f]);
-        } elseif (function_exists('curl_multi_exec')) {
-            $f = new SdkCurlFactory(50);
-            $obsclient->factorys[] = $f;
-            $handler = new CurlMultiHandler(['handle_factory' => $f]);
-        } else {
-            // nothing handle
+        if ($handler === null) {
+            if (function_exists('curl_multi_exec') && function_exists('curl_exec')) {
+                $f1 = new SdkCurlFactory(50);
+                $f2 = new SdkCurlFactory(3);
+                $handler = Proxy::wrapSync(
+                    new CurlMultiHandler(['handle_factory' => $f1]),
+                    new CurlHandler(['handle_factory' => $f2])
+                );
+            } elseif (function_exists('curl_exec')) {
+                $f = new SdkCurlFactory(3);
+                $handler = new CurlHandler(['handle_factory' => $f]);
+            } elseif (function_exists('curl_multi_exec')) {
+                $f = new SdkCurlFactory(50);
+                $handler = new CurlMultiHandler(['handle_factory' => $f]);
+            }
         }
 
         if (ini_get('allow_url_fopen')) {

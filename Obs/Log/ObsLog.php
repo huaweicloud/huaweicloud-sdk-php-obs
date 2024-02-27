@@ -17,111 +17,51 @@
 
 namespace Obs\Log;
 
-use Monolog\Formatter\LineFormatter;
-use Monolog\Handler\RotatingFileHandler;
 use Monolog\Logger;
 
-class ObsLog extends Logger
+/**
+ * @method static void debug(string $format, $args1 = null, $arg2 = null)
+ * @method static void info(string $format, $args1 = null, $arg2 = null)
+ * @method static void notice(string $format, $args1 = null, $arg2 = null)
+ * @method static void warning(string $format, $args1 = null, $arg2 = null)
+ * @method static void error(string $format, $args1 = null, $arg2 = null)
+ * @method static void critical(string $format, $args1 = null, $arg2 = null)
+ * @method static void alert(string $format, $args1 = null, $arg2 = null)
+ * @method static void emergency(string $format, $args1 = null, $arg2 = null)
+ */
+class ObsLog
 {
+
+    /**
+     * @var Logger
+     */
     public static $log = null;
-    protected $logPath = './';
-    protected $logName = null;
-    protected $logLevel = Logger::DEBUG;
-    protected $logMaxFiles = 0;
 
-    private $formatter = null;
-    private $filepath = '';
-
-    public static function initLog($logConfig = [])
+    public static function setLogger(Logger $logger)
     {
-        $s3log = new ObsLog('');
-        $s3log->setConfig($logConfig);
-        $s3log->cheakDir();
-        $s3log->setFilePath();
-        $s3log->setFormat();
-        $s3log->setHande();
+        self::$log = $logger;
     }
 
-    private function setFormat()
+    public static function __callStatic($name, $arguments)
     {
-        $output = "[%datetime%][%level_name%]%message%\n";
-        $this->formatter = new LineFormatter($output);
-    }
-
-    private function setHande()
-    {
-        static::$log = new Logger('obs_logger');
-        $rotating = new RotatingFileHandler($this->filepath, $this->logMaxFiles, $this->logLevel);
-        $rotating->setFormatter($this->formatter);
-        static::$log->pushHandler($rotating);
-    }
-
-    private function setConfig($logConfig = [])
-    {
-        $arr = empty($logConfig) ? ObsConfig::LOG_FILE_CONFIG : $logConfig;
-        $this->logPath = iconv('UTF-8', 'GBK', $arr['FilePath']);
-        $this->logName = iconv('UTF-8', 'GBK', $arr['FileName']);
-        $this->logMaxFiles = is_numeric($arr['MaxFiles']) ? 0 : intval($arr['MaxFiles']);
-        $this->logLevel = $arr['Level'];
-    }
-
-    private function cheakDir()
-    {
-        if (!is_dir($this->logPath)) {
-            mkdir($this->logPath, 0755, true);
+        if (!isset(self::$log)) {
+            return;
         }
-    }
 
-    private function setFilePath()
-    {
-        $this->filepath = $this->logPath . '/' . $this->logName;
-    }
+        $format = $arguments[0];
 
-    private static function writeLog($level, $msg)
-    {
-        switch ($level) {
-            case DEBUG:
-                static::$log->debug($msg);
-                break;
-            case INFO:
-                static::$log->info($msg);
-                break;
-            case NOTICE:
-                static::$log->notice($msg);
-                break;
-            case WARNING:
-                static::$log->warning($msg);
-                break;
-            case ERROR:
-                static::$log->error($msg);
-                break;
-            case CRITICAL:
-                static::$log->critical($msg);
-                break;
-            case ALERT:
-                static::$log->alert($msg);
-                break;
-            case EMERGENCY:
-                static::$log->emergency($msg);
-                break;
-            default:
-                break;
+        if (isset($arguments[2])) {
+            $msg = sprintf($format, $arguments[1], $arguments[2]);
+        } else {
+            $msg = urldecode($format);
         }
+
+        $back = debug_backtrace();
+        $line = $back[0]['line'];
+        $filename = basename($back[0]['file']);
+        $message = '[' . $filename . ':' . $line . ']: ' . $msg;
+
+        self::$log->$name($message);
     }
 
-    public static function commonLog($level, $format, $args1 = null, $arg2 = null)
-    {
-        if (ObsLog::$log) {
-            if ($args1 === null && $arg2 === null) {
-                $msg = urldecode($format);
-            } else {
-                $msg = sprintf($format, $args1, $arg2);
-            }
-            $back = debug_backtrace();
-            $line = $back[0]['line'];
-            $filename = basename($back[0]['file']);
-            $message = '[' . $filename . ':' . $line . ']: ' . $msg;
-            ObsLog::writeLog($level, $message);
-        }
-    }
 }
