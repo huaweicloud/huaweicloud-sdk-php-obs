@@ -2874,6 +2874,31 @@ class OBSRequestResource
                         'location' => 'header',
                         'sentAs' => 'Content-Length',
                     ],
+                    'ContentEncoding' => [
+                        'type' => 'string',
+                        'location' => 'header',
+                        'sentAs' => 'content-encoding',
+                    ],
+                    'ContentLanguage' => [
+                        'type' => 'string',
+                        'location' => 'header',
+                        'sentAs' => 'content-language',
+                    ],
+                    'ContentDisposition' => [
+                        'type' => 'string',
+                        'location' => 'header',
+                        'sentAs' => 'content-disposition',
+                    ],
+                    'CacheControl' => [
+                        'type' => 'string',
+                        'location' => 'header',
+                        'sentAs' => 'cache-control',
+                    ],
+                    'HttpExpires' => [
+                        'type' => 'string',
+                        'location' => 'header',
+                        'sentAs' => 'expires',
+                    ],
                     'Metadata' => [
                         'type' => 'object',
                         'location' => 'header',

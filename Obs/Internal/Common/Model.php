@@ -33,11 +33,13 @@ class Model implements \ArrayAccess, \IteratorAggregate, \Countable, ToArrayInte
         $this->data = $data;
     }
 
+    #[\ReturnTypeWillChange]
     public function count(): int
     {
         return count($this->data);
     }
 
+    #[\ReturnTypeWillChange]
     public function getIterator(): \Traversable
     {
         return new \ArrayIterator($this->data);
@@ -169,21 +171,25 @@ class Model implements \ArrayAccess, \IteratorAggregate, \Countable, ToArrayInte
         return $collection;
     }
 
-    public function offsetExists($offset): bool
+    #[\ReturnTypeWillChange]
+    public function offsetExists($offset)
     {
         return isset($this->data[$offset]);
     }
 
+    #[\ReturnTypeWillChange]
     public function offsetGet($offset)
     {
         return isset($this->data[$offset]) ? $this->data[$offset] : null;
     }
 
+    #[\ReturnTypeWillChange]
     public function offsetSet($offset, $value): void
     {
         $this->data[$offset] = $value;
     }
-
+    
+    #[\ReturnTypeWillChange]
     public function offsetUnset($offset): void
     {
         unset($this->data[$offset]);

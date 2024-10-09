@@ -21,6 +21,7 @@ use Psr\Http\Message\StreamInterface;
 use GuzzleHttp\Psr7\StreamDecoratorTrait;
 use Obs\ObsException;
 
+#[\AllowDynamicProperties]
 class CheckoutStream implements StreamInterface
 {
     use StreamDecoratorTrait;
@@ -33,7 +34,7 @@ class CheckoutStream implements StreamInterface
         $this->expectedLength = $expectedLength;
     }
 
-    public function getContents()
+    public function getContents(): string
     {
         $contents = $this->stream->getContents();
         $length = strlen($contents);
@@ -43,7 +44,7 @@ class CheckoutStream implements StreamInterface
         return $contents;
     }
 
-    public function read($length)
+    public function read($length): string
     {
         $string = $this->stream->read($length);
         if ($this->expectedLength !== null) {
