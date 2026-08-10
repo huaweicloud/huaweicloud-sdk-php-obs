@@ -180,7 +180,7 @@ define('EMERGENCY', Logger::EMERGENCY);
 class ObsClient
 {
 
-    const SDK_VERSION = '3.23.10';
+    const SDK_VERSION = '3.24.9';
 
     const AclPrivate = 'private';
     const AclPublicRead = 'public-read';

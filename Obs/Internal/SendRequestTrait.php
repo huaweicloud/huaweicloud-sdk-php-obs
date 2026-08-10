@@ -264,10 +264,10 @@ trait SendRequestTrait
 
         $expires = strval($expires);
 
-        $date = $headers['date'];
+        $date = $headers['date'] ?? null;
 
         if (!isset($date)) {
-            $date = $headers['Date'];
+            $date = $headers['Date'] ?? null;
         }
 
         if (!isset($date)) {
@@ -618,7 +618,7 @@ trait SendRequestTrait
                 }
             }
 
-            if (!$hasContentTypeFlag) {
+            if (!array_key_exists('ContentType', $params) && !$hasContentTypeFlag) {
                 $params['ContentType'] = 'binary/octet-stream';
             }
         }
@@ -723,7 +723,7 @@ trait SendRequestTrait
                 }
                 $this->parseResponse($model, $request, $response, $operation);
             },
-            function (RequestException $exception) use ($model, $operation, $params, $request, $requestCount, $start) {
+            function ($exception) use ($model, $operation, $params, $request, $requestCount, $start) {
 
                 ObsLog::commonLog(INFO, 'http request cost ' . round(microtime(true) - $start, 3) * 1000 . ' ms');
                 $message = null;
@@ -733,9 +733,19 @@ trait SendRequestTrait
                         return;
                     } else {
                         $message = 'Exceeded retry limitation, max retry count:' . $this->maxRetryCount . ', error message:' . $exception->getMessage();
+                        ObsLog::commonLog(ERROR, $message);
                     }
+                    $obsException = new ObsException($exception->getMessage());
+                    $obsException ->setExceptionCode(-1);
+                    throw $obsException;
+                } elseif ($exception instanceof RequestException) {
+                    $message = "Request failed: " . $exception->getMessage();
+                    $this->parseException($model, $request, $exception, $message);
+                } else {
+                    $obsException = new ObsException($exception->getMessage());
+                    $obsException ->setExceptionCode(-1);
+                    throw $obsException;
                 }
-                $this->parseException($model, $request, $exception, $message);
             });
         $promise->wait();
     }
@@ -796,7 +806,7 @@ trait SendRequestTrait
                 unset($model['method']);
                 $callback(null, $model);
             },
-            function (RequestException $exception) use ($model, $operation, $params, $callback, $startAsync, $originMethod, $request, $start, $requestCount) {
+            function ($exception) use ($model, $operation, $params, $callback, $startAsync, $originMethod, $request, $start, $requestCount) {
                 ObsLog::commonLog(INFO, 'http request cost ' . round(microtime(true) - $start, 3) * 1000 . ' ms');
                 $message = null;
                 if ($exception instanceof ConnectException) {
@@ -805,10 +815,18 @@ trait SendRequestTrait
                     } else {
                         $message = 'Exceeded retry limitation, max retry count:' . $this->maxRetryCount . ', error message:' . $exception->getMessage();
                     }
+                    $obsException = new ObsException($exception->getMessage());
+                    $obsException ->setExceptionCode(-1);
+                    $callback($obsException, null);
+                } elseif ($exception instanceof RequestException) {
+                    $obsException = $this->parseExceptionAsync($request, $exception, $message);
+                    ObsLog::commonLog(INFO, 'obsclient cost ' . round(microtime(true) - $startAsync, 3) * 1000 . ' ms to execute ' . $originMethod);
+                    $callback($obsException, null);
+                } else {
+                    $obsException = new ObsException($exception->getMessage());
+                    $obsException ->setExceptionCode(-1);
+                    $callback($obsException, null);
                 }
-                $obsException = $this->parseExceptionAsync($request, $exception, $message);
-                ObsLog::commonLog(INFO, 'obsclient cost ' . round(microtime(true) - $startAsync, 3) * 1000 . ' ms to execute ' . $originMethod);
-                $callback($obsException, null);
             }
         );
     }

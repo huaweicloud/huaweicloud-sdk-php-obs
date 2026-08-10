@@ -235,7 +235,10 @@ trait GetResponseTrait
 
     private function writeFile($filePath, StreamInterface &$body)
     {
-        $filePath = iconv('UTF-8', 'GBK', $filePath);
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            // Windows 系统，使用 GBK 编码
+            $filePath = iconv('UTF-8', 'GBK//IGNORE', $filePath);
+        }
         if (is_string($filePath) && $filePath !== '') {
             $fp = null;
             $dir = dirname($filePath);
