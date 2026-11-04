@@ -19,6 +19,7 @@ namespace Obs;
 
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
+use Monolog\Logger;
 use Obs\Log\ObsLog;
 
 class ObsException extends \RuntimeException
@@ -138,7 +139,7 @@ class ObsException extends \RuntimeException
         }
         $message .= "\n";
 
-        ObsLog::commonLog(INFO,
+        ObsLog::commonLog(Logger::INFO,
             "http request:status:%d, %s",
             $statusCode, "code:{$this->getExceptionCode()}, message:{$errMsg}");
 

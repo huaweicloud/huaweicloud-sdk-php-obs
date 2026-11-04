@@ -80,28 +80,28 @@ class ObsLog extends Logger
     private static function writeLog($level, $msg)
     {
         switch ($level) {
-            case DEBUG:
+            case Logger::DEBUG:
                 static::$log->debug($msg);
                 break;
-            case INFO:
+            case Logger::INFO:
                 static::$log->info($msg);
                 break;
-            case NOTICE:
+            case Logger::NOTICE:
                 static::$log->notice($msg);
                 break;
-            case WARNING:
+            case Logger::WARNING:
                 static::$log->warning($msg);
                 break;
-            case ERROR:
+            case Logger::ERROR:
                 static::$log->error($msg);
                 break;
-            case CRITICAL:
+            case Logger::CRITICAL:
                 static::$log->critical($msg);
                 break;
-            case ALERT:
+            case Logger::ALERT:
                 static::$log->alert($msg);
                 break;
-            case EMERGENCY:
+            case Logger::EMERGENCY:
                 static::$log->emergency($msg);
                 break;
             default:

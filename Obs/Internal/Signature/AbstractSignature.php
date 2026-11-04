@@ -23,6 +23,7 @@ use Obs\Internal\Common\ObsTransform;
 use Obs\Internal\Common\SchemaFormatter;
 use Obs\Internal\Common\V2Transform;
 use Obs\Internal\Resource\Constants;
+use Monolog\Logger;
 use Obs\Log\ObsLog;
 use Obs\ObsException;
 use Psr\Http\Message\StreamInterface;
@@ -441,7 +442,7 @@ abstract class AbstractSignature implements SignatureInterface
             $headers['Content-Type'] = 'application/xml';
             $result['body'] = implode('', $body);
 
-            ObsLog::commonLog(DEBUG, 'request content ' . $result['body']);
+            ObsLog::commonLog(Logger::DEBUG, 'request content ' . $result['body']);
 
             if (isset($requestConfig['data']['contentMd5']) && $requestConfig['data']['contentMd5']) {
                 $headers['Content-MD5'] = base64_encode(md5($result['body'], true));
