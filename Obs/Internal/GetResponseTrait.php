@@ -23,6 +23,7 @@ use GuzzleHttp\Psr7\Response;
 use Obs\Internal\Common\CheckoutStream;
 use Obs\Internal\Common\Model;
 use Obs\Internal\Resource\Constants;
+use Monolog\Logger;
 use Obs\Log\ObsLog;
 use Obs\ObsException;
 use Psr\Http\Message\StreamInterface;
@@ -253,9 +254,9 @@ trait GetResponseTrait
                         fwrite($fp, $str);
                     }
                     fflush($fp);
-                    ObsLog::commonLog(DEBUG, "write file %s ok", $filePath);
+                    ObsLog::commonLog(Logger::DEBUG, "write file %s ok", $filePath);
                 } else {
-                    ObsLog::commonLog(ERROR, "open file error,file path:%s", $filePath);
+                    ObsLog::commonLog(Logger::ERROR, "open file error,file path:%s", $filePath);
                 }
             } finally {
                 if ($fp) {
@@ -311,7 +312,7 @@ trait GetResponseTrait
                         $obsException->setExceptionMessage(strval($data['message']));
                     }
                 } elseif ($data && strlen($data)) {
-                    ObsLog::commonLog(ERROR, "response body %s, and jsonToArray data is %s", $body, $data);
+                    ObsLog::commonLog(Logger::ERROR, "response body %s, and jsonToArray data is %s", $body, $data);
                     $obsException->setExceptionMessage("Invalid response data，since it is not json data");
                 } else {
                     // nothing handle
@@ -339,7 +340,7 @@ trait GetResponseTrait
                         $model['Message'] = strval($jsonArray['message']);
                     }
                 } elseif ($jsonArray && strlen($jsonArray)) {
-                    ObsLog::commonLog(ERROR, "response body %s, and jsonToArray data is %s", $body, $jsonArray);
+                    ObsLog::commonLog(Logger::ERROR, "response body %s, and jsonToArray data is %s", $body, $jsonArray);
                     $model['Message'] = "Invalid response data，since it is not json data";
                 } else {
                     // nothing handle
